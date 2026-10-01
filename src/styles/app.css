@@ -90,6 +90,75 @@ button {
   margin: 0 auto;
 }
 
+.home-page__section {
+  margin-top: 2rem;
+}
+
+.home-page__error {
+  background: color-mix(in srgb, var(--gc-red) 12%, var(--gc-bg));
+  border: 1px solid var(--gc-red);
+  border-radius: 6px;
+  padding: 0.6rem 0.9rem;
+}
+
+.home-page__template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.75rem;
+}
+
+.home-page__template-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-align: left;
+  padding: 0.9rem;
+  border: 1px solid var(--gc-border);
+  border-radius: 8px;
+  background: var(--gc-bg);
+}
+
+.home-page__template-card:hover {
+  border-color: var(--gc-focus);
+  background: var(--gc-surface);
+}
+
+.home-page__template-card span {
+  color: var(--gc-text-muted);
+  font-size: 0.85rem;
+}
+
+.home-page__file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.home-page__recent-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.home-page__recent-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--gc-border);
+  border-radius: 6px;
+}
+
+.home-page__recent-date {
+  color: var(--gc-text-muted);
+  font-size: 0.8rem;
+}
+
 @media print {
   @page {
     size: A4 landscape;
@@ -105,6 +174,15 @@ button {
   display: flex;
   flex-direction: column;
   height: 100vh;
+}
+
+.editor-page__status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+  padding: 2rem;
 }
 
 .editor-page__body {
@@ -686,4 +764,84 @@ button {
   font-size: 1.1rem;
   line-height: 1;
   padding: 0;
+}
+
+/* ---------------------------------------------------------------- */
+/* Dialogs                                                            */
+/* ---------------------------------------------------------------- */
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 40%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.dialog {
+  background: var(--gc-bg);
+  border-radius: 8px;
+  padding: 1.25rem;
+  width: min(26rem, 90vw);
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 24px rgb(0 0 0 / 25%);
+}
+
+.dialog h2 {
+  margin-top: 0;
+}
+
+.dialog__notice {
+  background: color-mix(in srgb, var(--gc-yellow) 18%, var(--gc-bg));
+  border: 1px solid var(--gc-yellow);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.dialog__field {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.dialog__link-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+}
+
+.dialog__link-row input {
+  flex: 1;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.8rem;
+  padding: 0.4rem;
+  border: 1px solid var(--gc-border);
+  border-radius: 4px;
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.dialog__actions--stacked {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.dialog__primary {
+  background: var(--gc-blue);
+  color: #fff;
+  border-color: var(--gc-blue);
+}
+
+.dialog__close {
+  margin-top: 1rem;
+  width: 100%;
 }

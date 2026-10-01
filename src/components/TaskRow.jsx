@@ -21,6 +21,7 @@ import { computeEnd } from '../lib/scheduler.js'
  * @param {(taskId: string, name: string) => void} props.onRename - called when the task's name is edited and committed
  * @param {(taskId: string, assignee: string) => void} props.onAssigneeChange - called when the task's assignee is edited and committed
  * @param {(taskId: string, colour: string) => void} props.onColourChange - called when the colour swatch is clicked, cycling to the next colour
+ * @param {boolean} [props.readOnly] - when true, the name, assignee and colour are not editable
  * @returns {JSX.Element} the table row
  */
 function TaskRow({
@@ -37,6 +38,7 @@ function TaskRow({
   onRename,
   onAssigneeChange,
   onColourChange,
+  readOnly,
 }) {
   const end = computeEnd(task, calendar)
   const [editingName, setEditingName] = useState(false)
@@ -49,6 +51,7 @@ function TaskRow({
    */
   function handleSwatchClick(event) {
     event.stopPropagation()
+    if (readOnly) return
     const index = TASK_COLOURS.findIndex((c) => c.value === task.colour)
     const next = TASK_COLOURS[(index + 1) % TASK_COLOURS.length]
     onColourChange(task.id, next.value)
@@ -96,7 +99,7 @@ function TaskRow({
           <span
             onClick={(event) => {
               event.stopPropagation()
-              setEditingAssignee(true)
+              if (!readOnly) setEditingAssignee(true)
             }}
           >
             {task.assignee || ''}
@@ -172,7 +175,7 @@ function TaskRow({
             className="task-row__name"
             onDoubleClick={(event) => {
               event.stopPropagation()
-              setEditingName(true)
+              if (!readOnly) setEditingName(true)
             }}
           >
             {task.name}

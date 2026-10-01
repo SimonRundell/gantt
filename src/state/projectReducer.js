@@ -365,19 +365,36 @@ export function projectReducer(state, action) {
       return { ...state, ui: { ...state.ui, saveStatus: action.status } }
     }
 
+    case 'SET_SERVER_META': {
+      // Bookkeeping only (id, revision, timestamps) - never part of
+      // undo history, since reverting a save's revision number would
+      // not make sense to a student pressing Ctrl+Z.
+      return { ...state, project: { ...state.project, ...action.fields } }
+    }
+
     case 'DISMISS_ERROR': {
       return { ...state, ui: { ...state.ui, lastError: null } }
     }
 
-    case 'REPLACE_TASKS_AND_DEPENDENCIES': {
-      // Used by bulk operations (upload merge, conflict resolution)
-      // that already know the full resulting lists.
+    case 'IMPORT_PROJECT': {
+      // Replaces the working chart's content with an uploaded file,
+      // keeping this browser's undo history (one more undo step gets
+      // you back to what was there before) and the server identity
+      // (id, revision) that lives outside the reducer entirely.
       const history = pushHistory(state)
+      const incoming = action.project
       const project = reschedule(
-        { ...state.project, tasks: renumberOrder(action.tasks), dependencies: action.dependencies },
+        {
+          ...state.project,
+          title: incoming.title,
+          calendar: incoming.calendar,
+          view: incoming.view ?? state.project.view,
+          tasks: renumberOrder(incoming.tasks),
+          dependencies: incoming.dependencies,
+        },
         [],
       )
-      return { ...state, history, project }
+      return { ...state, history, project, selection: { taskId: null } }
     }
 
     default:

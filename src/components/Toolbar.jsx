@@ -26,6 +26,10 @@ import { ZOOM_LEVELS } from '../lib/timelineScale.js'
  * @param {boolean} props.showCriticalPath - whether the critical path highlight is on
  * @param {() => void} props.onToggleCriticalPath - called when the critical path toggle is used
  * @param {string} props.saveStatus - a short save status label to display
+ * @param {boolean} props.readOnly - whether this chart was opened without an edit link
+ * @param {() => void} props.onDownload - called when the download button is used
+ * @param {() => void} props.onUploadClick - called when the upload button is used
+ * @param {() => void} props.onShare - called when the share button is used
  * @returns {JSX.Element} the toolbar
  */
 function Toolbar({
@@ -48,6 +52,10 @@ function Toolbar({
   showCriticalPath,
   onToggleCriticalPath,
   saveStatus,
+  readOnly,
+  onDownload,
+  onUploadClick,
+  onShare,
 }) {
   const [draftTitle, setDraftTitle] = useState(title)
 
@@ -57,15 +65,17 @@ function Toolbar({
         className="toolbar__title"
         value={draftTitle}
         aria-label="Project title"
+        readOnly={readOnly}
         onChange={(event) => setDraftTitle(event.target.value)}
         onBlur={() => {
+          if (readOnly) return
           if (draftTitle.trim() !== '' && draftTitle !== title) onTitleChange(draftTitle.trim())
           else setDraftTitle(title)
         }}
       />
 
       <span className="toolbar__save-status" role="status">
-        {saveStatus}
+        {readOnly ? 'View only' : saveStatus}
       </span>
 
       <div className="toolbar__group" role="group" aria-label="Edit history">
@@ -78,13 +88,13 @@ function Toolbar({
       </div>
 
       <div className="toolbar__group" role="group" aria-label="Add">
-        <button type="button" onClick={() => onAddTask('task')}>
+        <button type="button" onClick={() => onAddTask('task')} disabled={readOnly}>
           Add task
         </button>
-        <button type="button" onClick={() => onAddTask('milestone')}>
+        <button type="button" onClick={() => onAddTask('milestone')} disabled={readOnly}>
           Add milestone
         </button>
-        <button type="button" onClick={() => onAddTask('group')}>
+        <button type="button" onClick={() => onAddTask('group')} disabled={readOnly}>
           Add group
         </button>
       </div>
@@ -126,6 +136,18 @@ function Toolbar({
         <input type="checkbox" checked={showCriticalPath} onChange={onToggleCriticalPath} />
         Critical path
       </label>
+
+      <div className="toolbar__group" role="group" aria-label="Save and share">
+        <button type="button" onClick={onDownload}>
+          Download
+        </button>
+        <button type="button" onClick={onUploadClick} disabled={readOnly}>
+          Upload
+        </button>
+        <button type="button" onClick={onShare}>
+          Share
+        </button>
+      </div>
     </div>
   )
 }

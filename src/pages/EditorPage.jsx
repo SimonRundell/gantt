@@ -1,62 +1,157 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import ConflictDialog from '../components/ConflictDialog.jsx'
 import DependencyEditor from '../components/DependencyEditor.jsx'
+import ShareDialog from '../components/ShareDialog.jsx'
 import StatusBar from '../components/StatusBar.jsx'
 import TaskTable from '../components/TaskTable.jsx'
 import Timeline from '../components/Timeline.jsx'
 import Toast from '../components/Toast.jsx'
 import Toolbar from '../components/Toolbar.jsx'
+import UploadChoiceDialog from '../components/UploadChoiceDialog.jsx'
 import { snapForwardToWorkingDay, workingDaysBetween } from '../lib/calendar.js'
 import { addCalendarDays } from '../lib/dates.js'
+import { downloadProjectJson } from '../lib/downloadFile.js'
+import { migrate } from '../lib/migrate.js'
+import { recordRecentProject } from '../lib/recentProjects.js'
 import { computeEnd, criticalPath } from '../lib/scheduler.js'
-import { createPerformanceSampleProject, createStarterProject } from '../lib/sampleProject.js'
+import { createPerformanceSampleProject } from '../lib/sampleProject.js'
 import { flattenVisibleRows } from '../lib/taskTree.js'
 import { pxPerDayFor } from '../lib/timelineScale.js'
+import { sanitizeForImport, validateProject } from '../lib/validate.js'
 import { useProject } from '../hooks/useProject.js'
+import { createProject, getProject, saveProject } from '../services/projects.js'
 import { ProjectProvider } from '../state/ProjectContext.jsx'
 
 const MIN_TABLE_WIDTH = 240
 const MAX_TABLE_WIDTH = 720
+const AUTOSAVE_DELAY_MS = 1500
 
 /**
- * The project editor, reached at /p/:id. Loads a local sample project
- * for now; real server loading and saving are wired up once the
- * save/load phase of the build is reached.
+ * The project editor, reached at /p/:id. Loads the project from the
+ * server (or, for local performance testing, a generated sample via
+ * ?sample=large) and hands off to EditorContent once it is ready.
  * @returns {JSX.Element} the editor page
  */
 function EditorPage() {
   const { id } = useParams()
   const [searchParams] = useSearchParams()
+  const location = useLocation()
+  const tokenFromUrl = searchParams.get('k')
+  const sampleMode = searchParams.get('sample') === 'large'
 
-  const project = useMemo(() => {
-    if (searchParams.get('sample') === 'large') {
-      return createPerformanceSampleProject(12, 10)
+  const [load, setLoad] = useState({ status: 'loading', project: null, editToken: null, canEdit: false, error: null })
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function run() {
+      if (sampleMode) {
+        const project = createPerformanceSampleProject(12, 10)
+        if (!cancelled) setLoad({ status: 'ready', project, editToken: null, canEdit: true, error: null })
+        return
+      }
+
+      try {
+        const data = await getProject(id, tokenFromUrl)
+        if (cancelled) return
+        const editToken = data.canEdit ? tokenFromUrl : null
+        recordRecentProject({ id, title: data.title, editToken })
+        setLoad({ status: 'ready', project: data, editToken, canEdit: data.canEdit, error: null })
+      } catch (err) {
+        if (cancelled) return
+        const message =
+          err.response?.status === 404
+            ? 'This chart could not be found. Check the link and try again.'
+            : 'Could not load this chart. Check your connection and try again.'
+        setLoad({ status: 'error', project: null, editToken: null, canEdit: false, error: message })
+      }
     }
-    return createStarterProject()
-  }, [searchParams])
+
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [id, tokenFromUrl, sampleMode])
+
+  if (load.status === 'loading') {
+    return (
+      <main className="editor-page__status">
+        <p>Loading chart…</p>
+      </main>
+    )
+  }
+
+  if (load.status === 'error') {
+    return (
+      <main className="editor-page__status">
+        <p>{load.error}</p>
+      </main>
+    )
+  }
 
   return (
-    <ProjectProvider project={project}>
-      <EditorContent projectId={id} />
+    <ProjectProvider project={load.project}>
+      <EditorContent
+        projectId={id}
+        editToken={load.editToken}
+        canEdit={load.canEdit}
+        justCreated={Boolean(location.state?.justCreated)}
+      />
     </ProjectProvider>
   )
 }
+
+/** @type {Set<string>} action types allowed through even when the project is read-only */
+const READ_ONLY_SAFE_ACTIONS = new Set([
+  'SELECT_TASK',
+  'SET_ZOOM',
+  'TOGGLE_CRITICAL_PATH',
+  'TOGGLE_BASELINE',
+  'SET_COLUMNS',
+  'TOGGLE_COLLAPSE',
+  'DISMISS_ERROR',
+  'SET_SAVE_STATUS',
+  'UNDO',
+  'REDO',
+])
 
 /**
  * The editor's actual layout and interaction logic, split out from
  * EditorPage so it can call useProject (which needs to be inside the
  * provider).
- * @param {{projectId: string}} props
+ * @param {{projectId: string, editToken: string|null, canEdit: boolean, justCreated: boolean}} props
  * @returns {JSX.Element} the editor's content
  */
-function EditorContent({ projectId }) {
-  const { state, dispatch } = useProject()
+function EditorContent({ projectId, editToken, canEdit, justCreated }) {
+  const navigate = useNavigate()
+  const { state, dispatch: rawDispatch } = useProject()
   const { project, selection, history } = state
+
+  /**
+   * Blocks content-changing actions when the project was opened
+   * read-only (no valid edit token), while still allowing navigation,
+   * zoom and selection so a view-only visitor can look around.
+   * @param {{type: string, [key: string]: unknown}} action - the action to dispatch
+   * @returns {void}
+   */
+  const dispatch = useCallback(
+    (action) => {
+      if (!canEdit && !READ_ONLY_SAFE_ACTIONS.has(action.type)) return
+      rawDispatch(action)
+    },
+    [canEdit, rawDispatch],
+  )
 
   const [tableWidth, setTableWidth] = useState(360)
   const [scrollTop, setScrollTop] = useState(0)
   const [selectedDependencyId, setSelectedDependencyId] = useState(null)
+  const [saveStatus, setSaveStatus] = useState(canEdit ? 'Saved' : 'View only')
+  const [conflict, setConflict] = useState(null)
+  const [shareOpen, setShareOpen] = useState(justCreated)
+  const [uploadChoice, setUploadChoice] = useState(null)
   const timelineApiRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   const rows = useMemo(() => flattenVisibleRows(project.tasks), [project.tasks])
   const tasksById = useMemo(() => new Map(project.tasks.map((t) => [t.id, t])), [project.tasks])
@@ -89,6 +184,71 @@ function EditorContent({ projectId }) {
   }, [project.tasks, project.calendar])
 
   const handleScroll = useCallback((value) => setScrollTop(value), [])
+
+  // Tracks the content of the version already saved (or just loaded),
+  // as a JSON string for a cheap equality check. Starting it at null
+  // and filling it in on the first effect run - rather than a simple
+  // "is this the first render" boolean - means React StrictMode's
+  // deliberate double-invocation of effects in development can't
+  // trick this into firing a spurious extra save: the second
+  // invocation just finds the content unchanged.
+  const lastSavedContentRef = useRef(null)
+
+  /**
+   * Saves the current project to the server. On success, updates the
+   * revision the editor is tracking. On a 409 (someone else saved a
+   * newer version first), opens the conflict dialog instead of
+   * silently losing either copy.
+   * @returns {Promise<void>} resolves once the save attempt finishes
+   */
+  const save = useCallback(async () => {
+    if (!canEdit || !editToken || projectId == null) return
+    const content = {
+      title: project.title,
+      calendar: project.calendar,
+      view: project.view,
+      tasks: project.tasks,
+      dependencies: project.dependencies,
+    }
+    setSaveStatus('Saving…')
+    try {
+      const result = await saveProject(projectId, editToken, { revision: project.revision, ...content })
+      rawDispatch({ type: 'SET_SERVER_META', fields: { revision: result.revision, updatedAt: result.updatedAt } })
+      lastSavedContentRef.current = JSON.stringify(content)
+      setSaveStatus('Saved')
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setConflict(err.response.data.project)
+        setSaveStatus('Unsaved changes')
+      } else {
+        setSaveStatus('Could not save - will try again')
+      }
+    }
+  }, [canEdit, editToken, projectId, project, rawDispatch])
+
+  useEffect(() => {
+    const current = JSON.stringify({
+      title: project.title,
+      calendar: project.calendar,
+      view: project.view,
+      tasks: project.tasks,
+      dependencies: project.dependencies,
+    })
+
+    if (lastSavedContentRef.current === null) {
+      lastSavedContentRef.current = current
+      return undefined
+    }
+    if (current === lastSavedContentRef.current || !canEdit || conflict) return undefined
+
+    setSaveStatus('Unsaved changes')
+    const timer = setTimeout(save, AUTOSAVE_DELAY_MS)
+    return () => clearTimeout(timer)
+    // Only the undoable content and the calendar/title/view are worth
+    // autosaving on; re-running this effect on every render would
+    // debounce against itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.title, project.calendar, project.view, project.tasks, project.dependencies])
 
   useEffect(() => {
     /**
@@ -157,6 +317,7 @@ function EditorContent({ projectId }) {
    * @returns {void}
    */
   function handleBarPointerDown(taskId, event, handle, barWidth) {
+    if (!canEdit) return
     const task = tasksById.get(taskId)
     if (!task) return
 
@@ -239,6 +400,44 @@ function EditorContent({ projectId }) {
     dispatch({ type: 'ADD_DEPENDENCY', from: fromTaskId, to: toTaskId, depType, lagDays: 0 })
   }
 
+  /**
+   * Reads and validates an uploaded `.json` file, then offers the
+   * choice to open it as a new chart or replace this one.
+   * @param {import('react').ChangeEvent<HTMLInputElement>} event - the file input change event
+   * @returns {Promise<void>} resolves once the file has been handled
+   */
+  async function handleUploadFile(event) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    const text = await file.text()
+    let parsed
+    try {
+      parsed = JSON.parse(text)
+    } catch {
+      window.alert('That file is not valid JSON, so it could not be read.')
+      return
+    }
+
+    const migrated = migrate(parsed)
+    if (!migrated.ok) {
+      window.alert(migrated.error)
+      return
+    }
+
+    const result = validateProject(migrated.doc)
+    if (!result.valid) {
+      window.alert(`This file has some problems:\n\n${result.problems.join('\n')}`)
+      return
+    }
+
+    setUploadChoice(sanitizeForImport(migrated.doc))
+  }
+
+  const editLink = editToken ? `${window.location.origin}/p/${projectId}?k=${editToken}` : ''
+  const viewLink = `${window.location.origin}/p/${projectId}`
+
   const selectedDependency = project.dependencies.find((d) => d.id === selectedDependencyId) ?? null
 
   return (
@@ -248,13 +447,13 @@ function EditorContent({ projectId }) {
         onTitleChange={(title) => dispatch({ type: 'SET_TITLE', title })}
         zoom={project.view.zoom}
         onZoomChange={(zoom) => dispatch({ type: 'SET_ZOOM', zoom })}
-        canUndo={history.past.length > 0}
-        canRedo={history.future.length > 0}
+        canUndo={canEdit && history.past.length > 0}
+        canRedo={canEdit && history.future.length > 0}
         onUndo={() => dispatch({ type: 'UNDO' })}
         onRedo={() => dispatch({ type: 'REDO' })}
         onGoToToday={() => timelineApiRef.current?.scrollToToday()}
         onAddTask={(taskType) => dispatch({ type: 'ADD_TASK', afterTaskId: selection.taskId, taskType })}
-        hasSelection={Boolean(selection.taskId)}
+        hasSelection={canEdit && Boolean(selection.taskId)}
         onDeleteTask={() => selection.taskId && dispatch({ type: 'DELETE_TASK', taskId: selection.taskId })}
         onIndent={() => selection.taskId && dispatch({ type: 'INDENT_TASK', taskId: selection.taskId })}
         onOutdent={() => selection.taskId && dispatch({ type: 'OUTDENT_TASK', taskId: selection.taskId })}
@@ -262,7 +461,19 @@ function EditorContent({ projectId }) {
         onMoveDown={() => selection.taskId && dispatch({ type: 'REORDER_TASK', taskId: selection.taskId, direction: 'down' })}
         showCriticalPath={project.view.showCriticalPath}
         onToggleCriticalPath={() => dispatch({ type: 'TOGGLE_CRITICAL_PATH' })}
-        saveStatus={projectId ? `Project ${projectId}` : 'Local sample'}
+        saveStatus={saveStatus}
+        readOnly={!canEdit}
+        onDownload={() => downloadProjectJson(project)}
+        onUploadClick={() => fileInputRef.current?.click()}
+        onShare={() => setShareOpen(true)}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="home-page__file-input"
+        onChange={handleUploadFile}
+        aria-label="Upload a project file"
       />
 
       <div className="editor-page__body">
@@ -274,6 +485,7 @@ function EditorContent({ projectId }) {
             calendar={project.calendar}
             predecessorsByTask={predecessorsByTask}
             tasksById={tasksById}
+            readOnly={!canEdit}
             onSelect={(taskId) => dispatch({ type: 'SELECT_TASK', taskId })}
             onToggleCollapse={(taskId) => dispatch({ type: 'TOGGLE_COLLAPSE', taskId })}
             onRename={(taskId, name) => dispatch({ type: 'RENAME_TASK', taskId, name })}
@@ -312,7 +524,7 @@ function EditorContent({ projectId }) {
             onSelectDependency={(dependencyId) =>
               setSelectedDependencyId((current) => (current === dependencyId ? null : dependencyId))
             }
-            onCreateDependency={handleCreateDependency}
+            onCreateDependency={canEdit ? handleCreateDependency : () => {}}
             scrollTop={scrollTop}
             onScroll={handleScroll}
             onZoomChange={(zoom) => dispatch({ type: 'SET_ZOOM', zoom })}
@@ -330,7 +542,7 @@ function EditorContent({ projectId }) {
         taskCount={project.tasks.length}
       />
 
-      {selectedDependency && (
+      {selectedDependency && canEdit && (
         <DependencyEditor
           dependency={selectedDependency}
           fromTask={tasksById.get(selectedDependency.from)}
@@ -350,6 +562,52 @@ function EditorContent({ projectId }) {
       )}
 
       <Toast message={state.ui.lastError} onDismiss={() => dispatch({ type: 'DISMISS_ERROR' })} />
+
+      {shareOpen && <ShareDialog editLink={editLink} viewLink={viewLink} onClose={() => setShareOpen(false)} />}
+
+      {uploadChoice && (
+        <UploadChoiceDialog
+          fileTitle={uploadChoice.title}
+          onOpenAsNew={async () => {
+            const created = await createProject(uploadChoice)
+            recordRecentProject({ id: created.id, title: created.project.title, editToken: created.editToken })
+            setUploadChoice(null)
+            navigate(`/p/${created.id}?k=${created.editToken}`, { state: { justCreated: true } })
+          }}
+          onReplace={() => {
+            rawDispatch({ type: 'IMPORT_PROJECT', project: uploadChoice })
+            setUploadChoice(null)
+          }}
+          onCancel={() => setUploadChoice(null)}
+        />
+      )}
+
+      {conflict && (
+        <ConflictDialog
+          onDownloadMine={() => downloadProjectJson(project)}
+          onUseTheirs={() => {
+            rawDispatch({ type: 'IMPORT_PROJECT', project: conflict })
+            rawDispatch({
+              type: 'SET_SERVER_META',
+              fields: { revision: conflict.revision, updatedAt: conflict.updatedAt },
+            })
+            lastSavedContentRef.current = JSON.stringify({
+              title: conflict.title,
+              calendar: conflict.calendar,
+              view: conflict.view,
+              tasks: conflict.tasks,
+              dependencies: conflict.dependencies,
+            })
+            setConflict(null)
+            setSaveStatus('Saved')
+          }}
+          onKeepMine={async () => {
+            rawDispatch({ type: 'SET_SERVER_META', fields: { revision: conflict.revision } })
+            setConflict(null)
+            await save()
+          }}
+        />
+      )}
     </div>
   )
 }
