@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
+import DependencyEditor from '../components/DependencyEditor.jsx'
 import StatusBar from '../components/StatusBar.jsx'
 import TaskTable from '../components/TaskTable.jsx'
 import Timeline from '../components/Timeline.jsx'
+import Toast from '../components/Toast.jsx'
 import Toolbar from '../components/Toolbar.jsx'
 import { snapForwardToWorkingDay, workingDaysBetween } from '../lib/calendar.js'
 import { addCalendarDays } from '../lib/dates.js'
@@ -53,6 +55,7 @@ function EditorContent({ projectId }) {
 
   const [tableWidth, setTableWidth] = useState(360)
   const [scrollTop, setScrollTop] = useState(0)
+  const [selectedDependencyId, setSelectedDependencyId] = useState(null)
   const timelineApiRef = useRef(null)
 
   const rows = useMemo(() => flattenVisibleRows(project.tasks), [project.tasks])
@@ -223,6 +226,21 @@ function EditorContent({ projectId }) {
     dispatch({ type: 'END_DRAG' })
   }
 
+  /**
+   * Creates a dependency after a connector drag completes over a
+   * valid target. Rejected (circular) attempts surface through
+   * state.ui.lastError and are shown in the toast.
+   * @param {string} fromTaskId - the predecessor task's id
+   * @param {string} toTaskId - the successor task's id
+   * @param {string} depType - one of FS, SS, FF, SF
+   * @returns {void}
+   */
+  function handleCreateDependency(fromTaskId, toTaskId, depType) {
+    dispatch({ type: 'ADD_DEPENDENCY', from: fromTaskId, to: toTaskId, depType, lagDays: 0 })
+  }
+
+  const selectedDependency = project.dependencies.find((d) => d.id === selectedDependencyId) ?? null
+
   return (
     <div className="editor-page">
       <Toolbar
@@ -281,11 +299,20 @@ function EditorContent({ projectId }) {
         <div className="editor-page__timeline-pane">
           <Timeline
             rows={rows}
+            dependencies={project.dependencies}
             calendar={project.calendar}
             zoom={project.view.zoom}
             selectedTaskId={selection.taskId}
+            selectedDependencyId={selectedDependencyId}
             criticalTaskIds={criticalTaskIds}
-            onSelect={(taskId) => dispatch({ type: 'SELECT_TASK', taskId })}
+            onSelect={(taskId) => {
+              dispatch({ type: 'SELECT_TASK', taskId })
+              setSelectedDependencyId(null)
+            }}
+            onSelectDependency={(dependencyId) =>
+              setSelectedDependencyId((current) => (current === dependencyId ? null : dependencyId))
+            }
+            onCreateDependency={handleCreateDependency}
             scrollTop={scrollTop}
             onScroll={handleScroll}
             onZoomChange={(zoom) => dispatch({ type: 'SET_ZOOM', zoom })}
@@ -302,6 +329,27 @@ function EditorContent({ projectId }) {
         projectEnd={projectSpan.end}
         taskCount={project.tasks.length}
       />
+
+      {selectedDependency && (
+        <DependencyEditor
+          dependency={selectedDependency}
+          fromTask={tasksById.get(selectedDependency.from)}
+          toTask={tasksById.get(selectedDependency.to)}
+          onChangeType={(type) =>
+            dispatch({ type: 'UPDATE_DEPENDENCY', dependencyId: selectedDependency.id, fields: { type } })
+          }
+          onChangeLag={(lagDays) =>
+            dispatch({ type: 'UPDATE_DEPENDENCY', dependencyId: selectedDependency.id, fields: { lagDays } })
+          }
+          onDelete={() => {
+            dispatch({ type: 'DELETE_DEPENDENCY', dependencyId: selectedDependency.id })
+            setSelectedDependencyId(null)
+          }}
+          onClose={() => setSelectedDependencyId(null)}
+        />
+      )}
+
+      <Toast message={state.ui.lastError} onDismiss={() => dispatch({ type: 'DISMISS_ERROR' })} />
     </div>
   )
 }

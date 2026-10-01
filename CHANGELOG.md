@@ -51,3 +51,10 @@
 - Added the Delete/Backspace keyboard shortcut for removing the selected task (skipped while a text field has focus, so it doesn't fight with normal typing).
 - Fixed a bug in `DRAG_PREVIEW`: it took separate `start`/`durationDays` arguments, which meant a percent-only drag had nowhere to put the new percentage. Changed it to take a generic `fields` object instead, shared by date, duration and percent drags alike.
 - Manually verified in the browser: renamed a task inline and watched the timeline label update, cycled a colour swatch, dragged a bar to move it (and watched its FS successor and a milestone both cascade forward), resized a bar's end handle (duration and group roll-up updated correctly), and outdented a task out of its group. Undo cleanly reverted each of these as a single step.
+
+## Phase 5: Dependencies
+
+- Added `DependencyArrow`: an orthogonal (elbow) path with a short stub away from each bar and an arrowhead, covering all four dependency types by reading the predecessor's finish-or-start edge and the successor's start-or-finish edge from the dependency type.
+- Added connector dots to `TaskBar` and `MilestoneMarker` (visible on hover or selection) that start a drag-to-create gesture. Dropping on a specific connector dot targets that exact edge; dropping anywhere else on a bar defaults to its start. The combination of which dot you drag from and which edge you drop on decides FS, SS, FF or SF automatically.
+- Added `DependencyEditor`, a small panel for changing a selected dependency's type or lag, or deleting it, and `Toast`, a small self-dismissing notice used to show the "that would create a circular dependency" message from the reducer.
+- Manually verified in the browser: clicked an existing arrow and edited its lag (watched the whole downstream chain reschedule), dragged a new dependency from a milestone's connector onto a task bar (created a Start-to-Start dependency, correctly left the unaffected schedule alone since the constraint was already satisfied), attempted a dependency that would have closed a loop (rejected, with the toast message shown), and deleted a dependency from its editor panel.

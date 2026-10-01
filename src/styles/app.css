@@ -528,6 +528,58 @@ button {
   stroke-width: 2;
 }
 
+.task-bar__connector {
+  fill: var(--gc-bg);
+  stroke: var(--gc-text-muted);
+  stroke-width: 1.5;
+  cursor: crosshair;
+  opacity: 0;
+}
+
+.task-bar:hover .task-bar__connector,
+.task-bar--selected .task-bar__connector,
+.milestone-marker:hover .task-bar__connector,
+.milestone-marker--selected .task-bar__connector {
+  opacity: 1;
+}
+
+.dependency-arrow__hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 10;
+  cursor: pointer;
+}
+
+.dependency-arrow__line {
+  fill: none;
+  stroke: var(--gc-text-muted);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.dependency-arrow__head {
+  fill: var(--gc-text-muted);
+  pointer-events: none;
+}
+
+.dependency-arrow:hover .dependency-arrow__line,
+.dependency-arrow--highlighted .dependency-arrow__line {
+  stroke: var(--gc-focus);
+  stroke-width: 2;
+}
+
+.dependency-arrow:hover .dependency-arrow__head,
+.dependency-arrow--highlighted .dependency-arrow__head {
+  fill: var(--gc-focus);
+}
+
+.dependency-arrow__pending {
+  stroke: var(--gc-focus);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
 /* ---------------------------------------------------------------- */
 /* Status bar                                                        */
 /* ---------------------------------------------------------------- */
@@ -548,4 +600,90 @@ button {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------- */
+/* Dependency editor and toast                                       */
+/* ---------------------------------------------------------------- */
+
+.dependency-editor {
+  position: fixed;
+  right: 1rem;
+  bottom: 3rem;
+  width: 15rem;
+  background: var(--gc-bg);
+  border: 1px solid var(--gc-border);
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 15%);
+  padding: 0.75rem;
+  z-index: 5;
+}
+
+.dependency-editor__close {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  border: none;
+  background: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.25rem;
+}
+
+.dependency-editor__summary {
+  margin: 0 1.25rem 0.5rem 0;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.dependency-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.dependency-editor__field select,
+.dependency-editor__field input {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.3rem;
+  border: 1px solid var(--gc-border);
+  border-radius: 4px;
+}
+
+.dependency-editor__delete {
+  width: 100%;
+  border: 1px solid var(--gc-red);
+  color: var(--gc-red);
+  background: var(--gc-bg);
+  border-radius: 4px;
+  padding: 0.35rem;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 3rem;
+  transform: translateX(-50%);
+  background: var(--gc-text);
+  color: var(--gc-bg);
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 28rem;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 25%);
+  z-index: 10;
+}
+
+.toast__dismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0;
 }

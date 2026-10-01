@@ -19,9 +19,10 @@ const GROUP_TICK_HEIGHT = 10
  * @param {boolean} props.critical - whether this task is on the critical path
  * @param {(taskId: string) => void} props.onSelect - called when the bar is clicked
  * @param {(event: import('react').PointerEvent, handle: 'move'|'resize-start'|'resize-end'|'percent', barWidth: number) => void} [props.onPointerDown] - called when a drag starts on the bar, one of its edge handles, or its percent handle
+ * @param {(taskId: string, edge: 'start'|'end', event: import('react').PointerEvent) => void} [props.onConnectorPointerDown] - called when a drag starts on a connector dot, to begin creating a dependency
  * @returns {JSX.Element} the bar's SVG group
  */
-function TaskBar({ task, x, width, rowTop, selected, critical, onSelect, onPointerDown }) {
+function TaskBar({ task, x, width, rowTop, selected, critical, onSelect, onPointerDown, onConnectorPointerDown }) {
   const barWidth = Math.max(width, 4)
   const label = `${task.name}, ${task.percent}% complete`
 
@@ -102,6 +103,32 @@ function TaskBar({ task, x, width, rowTop, selected, critical, onSelect, onPoint
         onPointerDown={(event) => {
           event.stopPropagation()
           onPointerDown?.(event, 'percent', barWidth)
+        }}
+      />
+      <circle
+        cx={x - 8}
+        cy={rowTop + ROW_HEIGHT / 2}
+        r={4}
+        className="task-bar__connector"
+        data-connector-task-id={task.id}
+        data-connector-edge="start"
+        aria-label={`Draw a dependency from the start of ${task.name}`}
+        onPointerDown={(event) => {
+          event.stopPropagation()
+          onConnectorPointerDown?.(task.id, 'start', event)
+        }}
+      />
+      <circle
+        cx={x + barWidth + 8}
+        cy={rowTop + ROW_HEIGHT / 2}
+        r={4}
+        className="task-bar__connector"
+        data-connector-task-id={task.id}
+        data-connector-edge="end"
+        aria-label={`Draw a dependency from the end of ${task.name}`}
+        onPointerDown={(event) => {
+          event.stopPropagation()
+          onConnectorPointerDown?.(task.id, 'end', event)
         }}
       />
     </g>
