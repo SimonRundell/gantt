@@ -5,6 +5,9 @@ import { defineConfig } from 'vite'
 // and the frontend reaches it via the apiBase in .config.json instead.
 export default defineConfig({
   plugins: [react()],
+  server: {
+    port: Number(process.env.PORT) || 5173,
+  },
   test: {
     environment: 'jsdom',
     globals: true,

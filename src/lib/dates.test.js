@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   addCalendarDays,
+  calendarDaysBetween,
   compareISODates,
   dayOfWeek,
   formatUKDate,
@@ -74,6 +75,20 @@ describe('compareISODates, minISODate, maxISODate', () => {
   it('picks the earlier and later date', () => {
     expect(minISODate('2026-05-01', '2026-04-01')).toBe('2026-04-01')
     expect(maxISODate('2026-05-01', '2026-04-01')).toBe('2026-05-01')
+  })
+})
+
+describe('calendarDaysBetween', () => {
+  it('counts every day, working or not', () => {
+    expect(calendarDaysBetween('2026-10-01', '2026-10-05')).toBe(4)
+  })
+
+  it('is negative when the second date is earlier', () => {
+    expect(calendarDaysBetween('2026-10-05', '2026-10-01')).toBe(-4)
+  })
+
+  it('is zero for the same date', () => {
+    expect(calendarDaysBetween('2026-10-01', '2026-10-01')).toBe(0)
   })
 })
 

@@ -119,6 +119,18 @@ export function todayISO() {
 }
 
 /**
+ * Counts plain calendar days from one ISO date to another (not
+ * working days). Used for laying dates out along the timeline, where
+ * every day - working or not - takes up the same width.
+ * @param {string} aISO - the earlier `YYYY-MM-DD` string
+ * @param {string} bISO - the later `YYYY-MM-DD` string
+ * @returns {number} the number of calendar days from a to b, negative if b is before a
+ */
+export function calendarDaysBetween(aISO, bISO) {
+  return Math.round((parseISODate(bISO).getTime() - parseISODate(aISO).getTime()) / 86400000)
+}
+
+/**
  * Formats an ISO date for display in the UK style, `dd/mm/yyyy`.
  * @param {string} iso - a `YYYY-MM-DD` string
  * @returns {string} the date formatted as `dd/mm/yyyy`
