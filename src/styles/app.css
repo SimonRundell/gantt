@@ -1,0 +1,98 @@
+/*
+ * Gantt Chart Planner - single application stylesheet.
+ * No CSS frameworks. Any inline style exceptions are noted in DECISIONS.md.
+ */
+
+:root {
+  /* Layout */
+  --row-height: 32px;
+  --table-min-width: 420px;
+  --focus-ring: 2px solid var(--gc-focus);
+
+  /* Task colour palette (names only are stored in data, never hex) */
+  --gc-blue: #2563eb;
+  --gc-green: #16a34a;
+  --gc-orange: #ea580c;
+  --gc-purple: #7c3aed;
+  --gc-teal: #0d9488;
+  --gc-red: #dc2626;
+  --gc-yellow: #ca8a04;
+  --gc-grey: #52525b;
+
+  /* UI chrome */
+  --gc-bg: #ffffff;
+  --gc-surface: #f4f5f7;
+  --gc-border: #d4d7dd;
+  --gc-text: #1f2328;
+  --gc-text-muted: #5b6168;
+  --gc-focus: #2563eb;
+  --gc-today: #dc2626;
+  --gc-non-working: #eceef1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+  color: var(--gc-text);
+  background: var(--gc-bg);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+code,
+pre,
+.mono {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: var(--gc-blue);
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+/* Visible focus for keyboard users throughout the app */
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.home-page,
+.not-found-page,
+.print-page {
+  padding: 2rem;
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+}

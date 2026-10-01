@@ -1,0 +1,20 @@
+# Project JSON lives here and must never be served directly; every
+# access goes through the PHP endpoints instead. Also disable PHP
+# execution in case a file with a .php extension ever ends up in here.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
+
+<FilesMatch "\.(php|phtml|php\d)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>

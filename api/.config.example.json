@@ -1,0 +1,8 @@
+{
+  "dataDir": "data",
+  "maxProjectBytes": 1048576,
+  "maxTasks": 1000,
+  "allowedOrigins": [],
+  "rateLimitPerMinute": 60,
+  "retentionDays": 365
+}

@@ -1,0 +1,4 @@
+{
+  "apiBase": "http://localhost/api",
+  "maxUploadBytes": 1048576
+}

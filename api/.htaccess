@@ -1,0 +1,12 @@
+# Deny direct access to dotfiles such as .config.json, on both the
+# Apache 2.4 and 2.2 authorization syntax so this works on shared hosts
+# that still run the older module.
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
