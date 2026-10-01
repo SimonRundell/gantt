@@ -31,7 +31,7 @@ const ZOOM_ORDER = ['day', 'week', 'month', 'quarter']
  * @param {number} props.scrollTop - the vertical scroll offset to apply, kept in sync with the table
  * @param {(scrollTop: number) => void} props.onScroll - called when the timeline is scrolled vertically
  * @param {(zoom: string) => void} props.onZoomChange - called when Ctrl+wheel changes the zoom level
- * @param {(taskId: string, event: import('react').PointerEvent, handle: string) => void} [props.onBarPointerDown] - called when a drag starts on a bar
+ * @param {(taskId: string, event: import('react').PointerEvent, handle: string, barWidth: number) => void} [props.onBarPointerDown] - called when a drag starts on a bar
  * @param {import('react').Ref<{scrollToToday: () => void}>} [props.scrollApiRef] - exposes a scrollToToday method to the parent
  * @returns {JSX.Element} the timeline pane
  */
@@ -174,7 +174,7 @@ function Timeline({
                   selected={task.id === selectedTaskId}
                   critical={critical}
                   onSelect={onSelect}
-                  onPointerDown={(event, handle) => onBarPointerDown?.(task.id, event, handle)}
+                  onPointerDown={(event, handle) => onBarPointerDown?.(task.id, event, handle, 0)}
                 />
               )
             }
@@ -190,7 +190,7 @@ function Timeline({
                 selected={task.id === selectedTaskId}
                 critical={critical}
                 onSelect={onSelect}
-                onPointerDown={(event, handle) => onBarPointerDown?.(task.id, event, handle)}
+                onPointerDown={(event, handle, barWidth) => onBarPointerDown?.(task.id, event, handle, barWidth)}
               />
             )
           })}

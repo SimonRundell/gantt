@@ -308,30 +308,49 @@ button {
   height: 10px;
   flex-shrink: 0;
   margin-right: 4px;
+  padding: 0;
+  border: 1px solid rgb(0 0 0 / 15%);
+  cursor: pointer;
 }
 
 .task-row__type-marker--task {
   border-radius: 2px;
-  background: var(--gc-blue);
 }
 
 .task-row__type-marker--group {
   border-radius: 1px;
-  background: var(--gc-text-muted);
   clip-path: polygon(0 0, 100% 0, 100% 40%, 50% 100%, 0 40%);
 }
 
 .task-row__type-marker--milestone {
-  background: var(--gc-orange);
   transform: rotate(45deg);
   width: 8px;
   height: 8px;
   margin: 1px 5px 1px 1px;
 }
 
+.task-row__type-marker--blue { background: var(--gc-blue); }
+.task-row__type-marker--green { background: var(--gc-green); }
+.task-row__type-marker--orange { background: var(--gc-orange); }
+.task-row__type-marker--purple { background: var(--gc-purple); }
+.task-row__type-marker--teal { background: var(--gc-teal); }
+.task-row__type-marker--red { background: var(--gc-red); }
+.task-row__type-marker--yellow { background: var(--gc-yellow); }
+.task-row__type-marker--grey { background: var(--gc-grey); }
+
 .task-row__name {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.task-row__edit-input {
+  font-family: inherit;
+  font-size: 0.85rem;
+  border: 1px solid var(--gc-focus);
+  border-radius: 2px;
+  padding: 0 2px;
+  width: 100%;
+  min-width: 60px;
 }
 
 .task-row__percent {
@@ -457,6 +476,19 @@ button {
 .task-bar:hover .task-bar__handle,
 .task-bar--selected .task-bar__handle {
   fill: rgb(0 0 0 / 15%);
+}
+
+.task-bar__percent-handle {
+  fill: var(--gc-text);
+  stroke: var(--gc-bg);
+  stroke-width: 1;
+  cursor: ew-resize;
+  opacity: 0;
+}
+
+.task-bar:hover .task-bar__percent-handle,
+.task-bar--selected .task-bar__percent-handle {
+  opacity: 1;
 }
 
 .task-bar__group-shape {

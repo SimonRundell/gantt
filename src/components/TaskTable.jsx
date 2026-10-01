@@ -17,6 +17,9 @@ import TaskRow from './TaskRow.jsx'
  * @param {Map<string, import('../lib/scheduler.js').Task>} props.tasksById - every task keyed by id
  * @param {(taskId: string) => void} props.onSelect - called when a row is selected
  * @param {(taskId: string) => void} props.onToggleCollapse - called when a row's disclosure arrow is used
+ * @param {(taskId: string, name: string) => void} props.onRename - called when a task's name is edited and committed
+ * @param {(taskId: string, assignee: string) => void} props.onAssigneeChange - called when a task's assignee is edited and committed
+ * @param {(taskId: string, colour: string) => void} props.onColourChange - called when a task's colour swatch is clicked
  * @param {number} props.scrollTop - the vertical scroll offset to apply, kept in sync with the timeline
  * @param {(scrollTop: number) => void} props.onScroll - called when the table is scrolled vertically
  * @returns {JSX.Element} the task table pane
@@ -30,6 +33,9 @@ function TaskTable({
   tasksById,
   onSelect,
   onToggleCollapse,
+  onRename,
+  onAssigneeChange,
+  onColourChange,
   scrollTop,
   onScroll,
 }) {
@@ -84,6 +90,9 @@ function TaskTable({
             tasksById={tasksById}
             onSelect={onSelect}
             onToggleCollapse={onToggleCollapse}
+            onRename={onRename}
+            onAssigneeChange={onAssigneeChange}
+            onColourChange={onColourChange}
           />
         ))}
         <div style={{ height: bottomSpacerHeight }} aria-hidden="true" />

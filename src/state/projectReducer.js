@@ -320,12 +320,9 @@ export function projectReducer(state, action) {
     }
 
     case 'DRAG_PREVIEW': {
-      const tasks = state.project.tasks.map((t) =>
-        t.id === action.taskId
-          ? { ...t, start: action.start, ...(action.durationDays != null ? { durationDays: action.durationDays } : {}) }
-          : t,
-      )
-      const project = reschedule({ ...state.project, tasks }, [action.taskId])
+      const tasks = state.project.tasks.map((t) => (t.id === action.taskId ? { ...t, ...action.fields } : t))
+      const changedIds = 'start' in action.fields || 'durationDays' in action.fields ? [action.taskId] : []
+      const project = reschedule({ ...state.project, tasks }, changedIds)
       return { ...state, project }
     }
 

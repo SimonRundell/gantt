@@ -18,7 +18,7 @@ const GROUP_TICK_HEIGHT = 10
  * @param {boolean} props.selected - whether this task is selected
  * @param {boolean} props.critical - whether this task is on the critical path
  * @param {(taskId: string) => void} props.onSelect - called when the bar is clicked
- * @param {(event: import('react').PointerEvent, handle: 'move'|'resize-start'|'resize-end') => void} [props.onPointerDown] - called when a drag starts on the bar or one of its edge handles
+ * @param {(event: import('react').PointerEvent, handle: 'move'|'resize-start'|'resize-end'|'percent', barWidth: number) => void} [props.onPointerDown] - called when a drag starts on the bar, one of its edge handles, or its percent handle
  * @returns {JSX.Element} the bar's SVG group
  */
 function TaskBar({ task, x, width, rowTop, selected, critical, onSelect, onPointerDown }) {
@@ -56,7 +56,7 @@ function TaskBar({ task, x, width, rowTop, selected, critical, onSelect, onPoint
       aria-label={label}
       tabIndex={0}
       onClick={() => onSelect(task.id)}
-      onPointerDown={(event) => onPointerDown?.(event, 'move')}
+      onPointerDown={(event) => onPointerDown?.(event, 'move', barWidth)}
     >
       <rect
         x={x}
@@ -78,7 +78,7 @@ function TaskBar({ task, x, width, rowTop, selected, critical, onSelect, onPoint
         className="task-bar__handle task-bar__handle--start"
         onPointerDown={(event) => {
           event.stopPropagation()
-          onPointerDown?.(event, 'resize-start')
+          onPointerDown?.(event, 'resize-start', barWidth)
         }}
       />
       <rect
@@ -89,7 +89,19 @@ function TaskBar({ task, x, width, rowTop, selected, critical, onSelect, onPoint
         className="task-bar__handle task-bar__handle--end"
         onPointerDown={(event) => {
           event.stopPropagation()
-          onPointerDown?.(event, 'resize-end')
+          onPointerDown?.(event, 'resize-end', barWidth)
+        }}
+      />
+      <rect
+        x={x + fillWidth - 4}
+        y={y + BAR_HEIGHT - 5}
+        width={8}
+        height={8}
+        className="task-bar__percent-handle"
+        aria-label={`${task.name} percent complete handle`}
+        onPointerDown={(event) => {
+          event.stopPropagation()
+          onPointerDown?.(event, 'percent', barWidth)
         }}
       />
     </g>

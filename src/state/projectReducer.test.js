@@ -152,9 +152,9 @@ describe('undo and redo', () => {
   it('coalesces a drag into a single undo step', () => {
     let state = twoTaskState()
     state = projectReducer(state, { type: 'BEGIN_DRAG' })
-    state = projectReducer(state, { type: 'DRAG_PREVIEW', taskId: 'a', start: '2026-10-06' })
-    state = projectReducer(state, { type: 'DRAG_PREVIEW', taskId: 'a', start: '2026-10-07' })
-    state = projectReducer(state, { type: 'DRAG_PREVIEW', taskId: 'a', start: '2026-10-08' })
+    state = projectReducer(state, { type: 'DRAG_PREVIEW', taskId: 'a', fields: { start: '2026-10-06' } })
+    state = projectReducer(state, { type: 'DRAG_PREVIEW', taskId: 'a', fields: { start: '2026-10-07' } })
+    state = projectReducer(state, { type: 'DRAG_PREVIEW', taskId: 'a', fields: { start: '2026-10-08' } })
     state = projectReducer(state, { type: 'END_DRAG' })
 
     expect(state.project.tasks.find((t) => t.id === 'a').start).toBe('2026-10-08')
@@ -167,7 +167,7 @@ describe('undo and redo', () => {
   it('restores the pre-drag state on cancel', () => {
     let state = twoTaskState()
     state = projectReducer(state, { type: 'BEGIN_DRAG' })
-    state = projectReducer(state, { type: 'DRAG_PREVIEW', taskId: 'a', start: '2026-10-09' })
+    state = projectReducer(state, { type: 'DRAG_PREVIEW', taskId: 'a', fields: { start: '2026-10-09' } })
     state = projectReducer(state, { type: 'CANCEL_DRAG' })
 
     expect(state.project.tasks.find((t) => t.id === 'a').start).toBe('2026-10-05')

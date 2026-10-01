@@ -42,3 +42,12 @@
 - Wired up undo/redo keyboard shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z) and a resizable splitter between the table and timeline panes.
 - Added `src/state/projectReducer.test.js`: 15 tests covering add/delete (including cascade delete and dependency cleanup), indent/outdent, dependency cycle rejection, and undo/redo (including drag coalescing and the history depth cap). Caught and fixed a real bug in the process: `applyDependencies` needs to be seeded with the *predecessor's* id, not the successor's, since it looks up what depends on a changed task.
 - Manually verified in a running browser: task selection, zoom switching, add task, undo/redo, critical path highlighting, and scroll sync all work; loaded a 132 task generated sample and confirmed the table and timeline both stay responsive with windowed rendering (only the visible rows are actually in the DOM).
+
+## Phase 4: Editing
+
+- Extended the toolbar with add task/milestone/group buttons and a task structure group (outdent, indent, move up, move down, delete), all keyboard-reachable and disabled when nothing is selected.
+- Added inline editing in the task table: double-click a task's name to rename it, click an assignee cell to edit it, click the colour swatch next to a task's name to cycle through the eight-colour palette.
+- Wired up dragging on the timeline: drag the middle of a bar to move it, drag either edge to resize it (adjusting duration), and drag the small handle at the end of the progress fill to set percent complete. Each drag is one undo step, including the dependency cascade it triggers.
+- Added the Delete/Backspace keyboard shortcut for removing the selected task (skipped while a text field has focus, so it doesn't fight with normal typing).
+- Fixed a bug in `DRAG_PREVIEW`: it took separate `start`/`durationDays` arguments, which meant a percent-only drag had nowhere to put the new percentage. Changed it to take a generic `fields` object instead, shared by date, duration and percent drags alike.
+- Manually verified in the browser: renamed a task inline and watched the timeline label update, cycled a colour swatch, dragged a bar to move it (and watched its FS successor and a milestone both cascade forward), resized a bar's end handle (duration and group roll-up updated correctly), and outdented a task out of its group. Undo cleanly reverted each of these as a single step.

@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { ZOOM_LEVELS } from '../lib/timelineScale.js'
 
 /**
- * The editor's top toolbar: the project title, undo/redo, the zoom
- * selector, and a "go to today" button. Export, sharing and the
- * shortcuts dialog are added in later build phases.
+ * The editor's top toolbar: the project title, undo/redo, task
+ * structure actions, the zoom selector, and a "go to today" button.
+ * Export, sharing and the shortcuts dialog are added in later build
+ * phases.
  * @param {object} props
  * @param {string} props.title - the project's current title
  * @param {(title: string) => void} props.onTitleChange - called when the title is edited and committed
@@ -15,7 +16,13 @@ import { ZOOM_LEVELS } from '../lib/timelineScale.js'
  * @param {() => void} props.onUndo - called when undo is requested
  * @param {() => void} props.onRedo - called when redo is requested
  * @param {() => void} props.onGoToToday - called when "today" is requested
- * @param {() => void} props.onAddTask - called when a new task should be added
+ * @param {(taskType: 'task'|'milestone'|'group') => void} props.onAddTask - called when a new task should be added
+ * @param {boolean} props.hasSelection - whether a task is currently selected, enabling the structure buttons
+ * @param {() => void} props.onDeleteTask - called when the selected task should be deleted
+ * @param {() => void} props.onIndent - called when the selected task should be indented
+ * @param {() => void} props.onOutdent - called when the selected task should be outdented
+ * @param {() => void} props.onMoveUp - called when the selected task should move up among its siblings
+ * @param {() => void} props.onMoveDown - called when the selected task should move down among its siblings
  * @param {boolean} props.showCriticalPath - whether the critical path highlight is on
  * @param {() => void} props.onToggleCriticalPath - called when the critical path toggle is used
  * @param {string} props.saveStatus - a short save status label to display
@@ -32,6 +39,12 @@ function Toolbar({
   onRedo,
   onGoToToday,
   onAddTask,
+  hasSelection,
+  onDeleteTask,
+  onIndent,
+  onOutdent,
+  onMoveUp,
+  onMoveDown,
   showCriticalPath,
   onToggleCriticalPath,
   saveStatus,
@@ -64,9 +77,35 @@ function Toolbar({
         </button>
       </div>
 
-      <button type="button" onClick={onAddTask}>
-        Add task
-      </button>
+      <div className="toolbar__group" role="group" aria-label="Add">
+        <button type="button" onClick={() => onAddTask('task')}>
+          Add task
+        </button>
+        <button type="button" onClick={() => onAddTask('milestone')}>
+          Add milestone
+        </button>
+        <button type="button" onClick={() => onAddTask('group')}>
+          Add group
+        </button>
+      </div>
+
+      <div className="toolbar__group" role="group" aria-label="Task structure">
+        <button type="button" onClick={onOutdent} disabled={!hasSelection} aria-label="Outdent task">
+          ⇤ Outdent
+        </button>
+        <button type="button" onClick={onIndent} disabled={!hasSelection} aria-label="Indent task">
+          ⇥ Indent
+        </button>
+        <button type="button" onClick={onMoveUp} disabled={!hasSelection} aria-label="Move task up">
+          ↑ Up
+        </button>
+        <button type="button" onClick={onMoveDown} disabled={!hasSelection} aria-label="Move task down">
+          ↓ Down
+        </button>
+        <button type="button" onClick={onDeleteTask} disabled={!hasSelection} aria-label="Delete task">
+          Delete
+        </button>
+      </div>
 
       <label className="toolbar__zoom">
         Zoom
