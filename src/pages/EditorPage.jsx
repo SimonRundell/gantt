@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import ConflictDialog from '../components/ConflictDialog.jsx'
 import DependencyEditor from '../components/DependencyEditor.jsx'
+import ExportDialog from '../components/ExportDialog.jsx'
+import FullChartView from '../components/FullChartView.jsx'
 import ShareDialog from '../components/ShareDialog.jsx'
 import StatusBar from '../components/StatusBar.jsx'
 import TaskTable from '../components/TaskTable.jsx'
@@ -12,6 +14,7 @@ import UploadChoiceDialog from '../components/UploadChoiceDialog.jsx'
 import { snapForwardToWorkingDay, workingDaysBetween } from '../lib/calendar.js'
 import { addCalendarDays } from '../lib/dates.js'
 import { downloadProjectJson } from '../lib/downloadFile.js'
+import { exportChartAsPdf, exportChartAsPng } from '../lib/exportChart.js'
 import { migrate } from '../lib/migrate.js'
 import { recordRecentProject } from '../lib/recentProjects.js'
 import { computeEnd, criticalPath } from '../lib/scheduler.js'
@@ -150,8 +153,10 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
   const [conflict, setConflict] = useState(null)
   const [shareOpen, setShareOpen] = useState(justCreated)
   const [uploadChoice, setUploadChoice] = useState(null)
+  const [exportOpen, setExportOpen] = useState(false)
   const timelineApiRef = useRef(null)
   const fileInputRef = useRef(null)
+  const exportNodeRef = useRef(null)
 
   const rows = useMemo(() => flattenVisibleRows(project.tasks), [project.tasks])
   const tasksById = useMemo(() => new Map(project.tasks.map((t) => [t.id, t])), [project.tasks])
@@ -401,6 +406,23 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
   }
 
   /**
+   * Exports the whole chart (not just the visible area) as a PNG or a
+   * PDF, rasterising the off-screen, unscrolled FullChartView rather
+   * than anything currently on screen.
+   * @param {{format: 'png'|'pdf', pageSize: 'a4'|'a3', orientation: 'portrait'|'landscape', fit: 'width'|'tile'}} options - the chosen export options
+   * @returns {Promise<void>} resolves once the download has started
+   */
+  async function handleExport(options) {
+    const node = exportNodeRef.current
+    if (!node) return
+    if (options.format === 'png') {
+      await exportChartAsPng(node, project.title)
+    } else {
+      await exportChartAsPdf(node, { title: project.title, ...options })
+    }
+  }
+
+  /**
    * Reads and validates an uploaded `.json` file, then offers the
    * choice to open it as a new chart or replace this one.
    * @param {import('react').ChangeEvent<HTMLInputElement>} event - the file input change event
@@ -466,6 +488,8 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
         onDownload={() => downloadProjectJson(project)}
         onUploadClick={() => fileInputRef.current?.click()}
         onShare={() => setShareOpen(true)}
+        onExport={() => setExportOpen(true)}
+        onPrint={() => window.open(`/print/${projectId}`, '_blank', 'noopener')}
       />
       <input
         ref={fileInputRef}
@@ -608,6 +632,17 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
           }}
         />
       )}
+
+      {exportOpen && <ExportDialog onExport={handleExport} onClose={() => setExportOpen(false)} />}
+
+      {/* Rendered off-screen at full size (no scrolling, no windowing) so
+          PNG/PDF export always captures the entire chart, not just the
+          part currently visible in the editor's scrollable viewport. */}
+      <div className="export-offscreen" aria-hidden="true">
+        <div ref={exportNodeRef}>
+          <FullChartView project={project} />
+        </div>
+      </div>
     </div>
   )
 }

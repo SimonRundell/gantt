@@ -164,6 +164,25 @@ button {
     size: A4 landscape;
     margin: 10mm;
   }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .task-row,
+  .task-table__header {
+    break-inside: avoid;
+  }
+}
+
+.print-page__button {
+  margin: 0.75rem;
+  padding: 0.5rem 1rem;
 }
 
 /* ---------------------------------------------------------------- */
@@ -808,6 +827,24 @@ button {
   margin-bottom: 0.75rem;
 }
 
+fieldset.dialog__field {
+  border: 1px solid var(--gc-border);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+fieldset.dialog__field legend {
+  font-weight: bold;
+  font-size: 0.8rem;
+  padding: 0 0.3rem;
+}
+
+fieldset.dialog__field label {
+  display: block;
+  padding: 0.2rem 0;
+  font-weight: normal;
+}
+
 .dialog__link-row {
   display: flex;
   gap: 0.4rem;
@@ -844,4 +881,45 @@ button {
 .dialog__close {
   margin-top: 1rem;
   width: 100%;
+}
+
+/* ---------------------------------------------------------------- */
+/* Full chart view (print and export)                                */
+/* ---------------------------------------------------------------- */
+
+.full-chart {
+  background: var(--gc-bg);
+  display: inline-block;
+}
+
+.full-chart__title {
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.full-chart__body {
+  display: flex;
+  align-items: flex-start;
+}
+
+.full-chart__table {
+  flex-shrink: 0;
+  width: 420px;
+  border-right: 1px solid var(--gc-border);
+}
+
+.full-chart__table .task-table__header {
+  position: static;
+}
+
+.full-chart__timeline {
+  flex: 1;
+}
+
+.export-offscreen {
+  position: fixed;
+  top: 0;
+  left: -100000px;
+  pointer-events: none;
 }

@@ -30,6 +30,8 @@ import { ZOOM_LEVELS } from '../lib/timelineScale.js'
  * @param {() => void} props.onDownload - called when the download button is used
  * @param {() => void} props.onUploadClick - called when the upload button is used
  * @param {() => void} props.onShare - called when the share button is used
+ * @param {() => void} props.onExport - called when the export (PNG/PDF) button is used
+ * @param {() => void} props.onPrint - called when the print button is used
  * @returns {JSX.Element} the toolbar
  */
 function Toolbar({
@@ -56,6 +58,8 @@ function Toolbar({
   onDownload,
   onUploadClick,
   onShare,
+  onExport,
+  onPrint,
 }) {
   const [draftTitle, setDraftTitle] = useState(title)
 
@@ -146,6 +150,12 @@ function Toolbar({
         </button>
         <button type="button" onClick={onShare}>
           Share
+        </button>
+        <button type="button" onClick={onExport}>
+          Export
+        </button>
+        <button type="button" onClick={onPrint}>
+          Print
         </button>
       </div>
     </div>
