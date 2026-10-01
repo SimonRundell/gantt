@@ -23,3 +23,11 @@
 - Added `src/lib/validate.js`: schema validation (via `ajv`) plus semantic checks (dangling dependency references, dependency cycles, missing parents) with plain English messages, and `sanitizeForImport` to strip `editTokenHash` and unknown keys from an uploaded file.
 - Added `src/lib/migrate.js`: a schema version gate ready for future migrations.
 - Added a Vitest suite (67 tests) covering the edge cases from the brief: zero-day milestones, a task starting on a non-working day, negative lag, all four dependency types, nested groups, removing a deleted task's dependencies, and a reschedule crossing a holiday block.
+
+## Phase 2: API
+
+- Added `project_create.php`, `project_get.php`, `project_save.php` and `project_delete.php`, all built on `storage.php`'s atomic read/write, token verification and shape validation.
+- `project_save.php` enforces optimistic concurrency: a mismatched `revision` gets a 409 with the server's current copy rather than silently overwriting someone else's work.
+- Added rate limiting (`enforceRateLimit` in `storage.php`): a small per-IP JSON counter file under `api/data/_rate/`, one minute windows, 429 once the configured limit is exceeded.
+- Added `api/cleanup.php`, a CLI-only script (refuses to run over the web) that deletes projects untouched for longer than `retentionDays`, with a `--dry-run` flag and scheduling notes for cron and Laragon/Windows Task Scheduler.
+- Manually exercised the full lifecycle (create, get with and without a token, save with a matching and a stale revision, delete with a wrong and a correct token, an invalid project id, and the rate limiter) against a local PHP server. Direct access to `api/data/*.json` and the dotfile deny rules depend on Apache honouring `.htaccess`, which needs checking again once Laragon's docroot points at this project (see README).

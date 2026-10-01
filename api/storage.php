@@ -291,3 +291,80 @@ function validateProjectShape(array $doc, array $config): array
 
     return $problems;
 }
+
+/**
+ * Reads and decodes the JSON request body.
+ *
+ * @return array<string,mixed> the decoded body, or an empty array if it was missing or not valid JSON
+ */
+function readJsonBody(): array
+{
+    $raw = file_get_contents('php://input');
+    $decoded = json_decode((string) $raw, true);
+    return is_array($decoded) ? $decoded : [];
+}
+
+/**
+ * Returns the client's IP address for rate limiting purposes.
+ *
+ * @return string the client IP, or 'unknown' if it could not be determined
+ */
+function clientIp(): string
+{
+    return $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+}
+
+/**
+ * Enforces a simple per-IP rate limit using a small JSON counter file
+ * per address. Each file tracks a one minute window; once the window
+ * has passed it resets rather than sliding, which is simple and good
+ * enough to stop accidental hammering from a script or a stuck retry
+ * loop. Sends a 429 and stops the request if the limit is exceeded.
+ *
+ * @return void
+ */
+function enforceRateLimit(): void
+{
+    $config = gcLoadConfig();
+    $limit = (int) ($config['rateLimitPerMinute'] ?? 60);
+    if ($limit <= 0) {
+        return;
+    }
+
+    $dir = __DIR__ . '/' . $config['dataDir'] . '/_rate';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0775, true);
+    }
+
+    // Colons show up in IPv6 addresses (e.g. ::1) but are not valid in
+    // Windows filenames, so they get replaced along with everything else.
+    $safeName = preg_replace('/[^A-Za-z0-9._-]/', '_', clientIp());
+    $path = $dir . '/' . $safeName . '.json';
+
+    $handle = fopen($path, 'c+');
+    if ($handle === false) {
+        return; // Fail open: a broken counter should not block real use.
+    }
+
+    flock($handle, LOCK_EX);
+    $raw = stream_get_contents($handle);
+    $state = json_decode((string) $raw, true);
+    $now = time();
+
+    if (!is_array($state) || ($now - ($state['windowStart'] ?? 0)) >= 60) {
+        $state = ['windowStart' => $now, 'count' => 0];
+    }
+
+    $state['count'] = ($state['count'] ?? 0) + 1;
+
+    ftruncate($handle, 0);
+    rewind($handle);
+    fwrite($handle, json_encode($state));
+    fflush($handle);
+    flock($handle, LOCK_UN);
+    fclose($handle);
+
+    if ($state['count'] > $limit) {
+        fail(429, 'Too many requests from this address. Please wait a moment and try again.');
+    }
+}
