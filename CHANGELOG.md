@@ -13,3 +13,13 @@
 - Added `api/.htaccess` (deny dotfiles) and `api/data/.htaccess` (deny all direct access, block PHP execution).
 - Installed and ran `react-doctor` (findings to be reviewed in the polish phase).
 - Initialised the git repository.
+
+## Phase 1: Pure libraries
+
+- Added `src/lib/dates.js`: ISO date parsing/formatting, all arithmetic via `Date.UTC` so dates never shift by a day because of the browser's time zone, plus UK-style `dd/mm/yyyy` formatting.
+- Added `src/lib/calendar.js`: working day checks, snapping a date forward to the next working day, moving a date by a number of working days (forward or backward), counting working days between two dates, and a hard-coded table of England bank holidays for 2026 and 2027.
+- Added `src/lib/scheduler.js`: `computeEnd`, `applyDependencies` (forward-only push scheduling for FS/SS/FF/SF with lag, including negative lag), `detectCycle`, `removeDependenciesForTask`, `rollUpGroups` (handles a group containing a group), and a `criticalPath` forward/backward pass.
+- Added `docs/gantt.schema.json`, the JSON Schema for a project document.
+- Added `src/lib/validate.js`: schema validation (via `ajv`) plus semantic checks (dangling dependency references, dependency cycles, missing parents) with plain English messages, and `sanitizeForImport` to strip `editTokenHash` and unknown keys from an uploaded file.
+- Added `src/lib/migrate.js`: a schema version gate ready for future migrations.
+- Added a Vitest suite (67 tests) covering the edge cases from the brief: zero-day milestones, a task starting on a non-working day, negative lag, all four dependency types, nested groups, removing a deleted task's dependencies, and a reschedule crossing a holiday block.
