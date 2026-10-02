@@ -1,8 +1,8 @@
 import { useRef } from 'react'
-import { snapForwardToWorkingDay, workingDaysBetween } from '../lib/calendar.js'
+import { nearestWeekStart, previousWorkingDay, snapForwardToWorkingDay, workingDaysBetween } from '../lib/calendar.js'
 import { addCalendarDays } from '../lib/dates.js'
 import { computeEnd } from '../lib/scheduler.js'
-import { pxPerDayFor } from '../lib/timelineScale.js'
+import { resolveScale } from '../lib/timelineScale.js'
 
 /**
  * Drives bar-drag gestures on the timeline: moving a bar, resizing
@@ -41,18 +41,42 @@ export function useBarDrag({ project, tasksById, dispatch, canEdit }) {
     }
 
     const deltaDays = Math.round(deltaPx / drag.pxPerDay)
+    const { calendar } = project
+    const snapToWeek = project.view.snap === 'week'
+
+    /**
+     * Applies the chosen snapping to a start date: the first working
+     * day of the nearest week when snapping to weeks, otherwise the
+     * next working day on or after it.
+     * @param {string} iso - the unsnapped start date
+     * @returns {string} the snapped start date
+     */
+    const snapStart = (iso) =>
+      snapForwardToWorkingDay(snapToWeek ? nearestWeekStart(iso, calendar.weekStartsOn) : iso, calendar)
+
+    /**
+     * Applies the chosen snapping to a finish date: the last working
+     * day of the nearest week when snapping to weeks, otherwise the
+     * next working day on or after it.
+     * @param {string} iso - the unsnapped finish date
+     * @returns {string} the snapped finish date
+     */
+    const snapEnd = (iso) =>
+      snapToWeek
+        ? previousWorkingDay(nearestWeekStart(addCalendarDays(iso, 1), calendar.weekStartsOn), calendar)
+        : snapForwardToWorkingDay(iso, calendar)
 
     if (drag.handle === 'move') {
-      const start = snapForwardToWorkingDay(addCalendarDays(drag.originalStart, deltaDays), project.calendar)
+      const start = snapStart(addCalendarDays(drag.originalStart, deltaDays))
       dispatch({ type: 'DRAG_PREVIEW', taskId: drag.taskId, fields: { start } })
     } else if (drag.handle === 'resize-end') {
       const rawEnd = addCalendarDays(drag.originalEnd, deltaDays)
-      const end = snapForwardToWorkingDay(rawEnd, project.calendar)
+      const end = snapEnd(rawEnd)
       const durationDays = Math.max(1, workingDaysBetween(drag.originalStart, end, project.calendar) + 1)
       dispatch({ type: 'DRAG_PREVIEW', taskId: drag.taskId, fields: { durationDays } })
     } else if (drag.handle === 'resize-start') {
       const rawStart = addCalendarDays(drag.originalStart, deltaDays)
-      const start = snapForwardToWorkingDay(rawStart, project.calendar)
+      const start = snapStart(rawStart)
       if (start > drag.originalEnd) return
       const durationDays = Math.max(1, workingDaysBetween(start, drag.originalEnd, project.calendar) + 1)
       dispatch({ type: 'DRAG_PREVIEW', taskId: drag.taskId, fields: { start, durationDays } })
@@ -92,7 +116,7 @@ export function useBarDrag({ project, tasksById, dispatch, canEdit }) {
       originalEnd: computeEnd(task, project.calendar),
       originalPercent: task.percent,
       barWidth,
-      pxPerDay: pxPerDayFor(project.view.zoom),
+      pxPerDay: resolveScale(project.view).pxPerDay,
     }
     dispatch({ type: 'SELECT_TASK', taskId })
     dispatch({ type: 'BEGIN_DRAG' })

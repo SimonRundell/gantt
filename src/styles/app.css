@@ -1409,3 +1409,196 @@ fieldset.dialog__field label {
   font-size: 0.85rem;
   margin: 0.5rem 0 0;
 }
+
+/* ---------------------------------------------------------------- */
+/* Task details panel                                                 */
+/* ---------------------------------------------------------------- */
+
+.btn--active {
+  background: #e4ecfa;
+  border-color: var(--gc-primary);
+}
+
+.editor-page__body .task-panel {
+  flex-shrink: 0;
+  width: 19rem;
+  border-left: 1px solid var(--gc-border);
+  background: var(--gc-surface);
+  overflow-y: auto;
+}
+
+.task-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--gc-border);
+  background: var(--gc-bg);
+}
+
+.task-panel__header h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--gc-navy);
+}
+
+.task-panel__empty {
+  padding: 1rem;
+  color: var(--gc-text-muted);
+}
+
+.task-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.9rem;
+}
+
+.task-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--gc-text-muted);
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.task-panel__field input,
+.task-panel__field select,
+.task-panel__field textarea {
+  font-weight: normal;
+  color: var(--gc-text);
+  width: 100%;
+}
+
+.task-panel__field textarea {
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius);
+  resize: vertical;
+}
+
+.task-panel__field small {
+  font-weight: normal;
+}
+
+.task-panel__field :disabled {
+  background: #eef1f6;
+  color: var(--gc-text-muted);
+}
+
+.task-panel__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.task-panel__info {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--gc-text-muted);
+}
+
+.task-panel__swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.task-panel__swatch {
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 0;
+  border-radius: 6px;
+  border: 2px solid transparent;
+}
+
+.task-panel__swatch[aria-pressed='true'] {
+  border-color: var(--gc-text);
+  box-shadow: 0 0 0 2px var(--gc-bg);
+}
+
+.task-panel__swatch--blue { background: var(--gc-blue); }
+.task-panel__swatch--green { background: var(--gc-green); }
+.task-panel__swatch--orange { background: var(--gc-orange); }
+.task-panel__swatch--purple { background: var(--gc-purple); }
+.task-panel__swatch--teal { background: var(--gc-teal); }
+.task-panel__swatch--red { background: var(--gc-red); }
+.task-panel__swatch--yellow { background: var(--gc-yellow); }
+.task-panel__swatch--grey { background: var(--gc-grey); }
+
+.task-panel__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ---------------------------------------------------------------- */
+/* Bar patterns, baseline and resources                               */
+/* ---------------------------------------------------------------- */
+
+.bar-pattern__marks {
+  stroke: rgb(255 255 255 / 55%);
+  stroke-width: 1.3;
+  fill: rgb(255 255 255 / 55%);
+}
+
+.bar-pattern__marks path {
+  fill: none;
+}
+
+.task-bar__pattern {
+  pointer-events: none;
+}
+
+.baseline-bar {
+  fill: #8d97a8;
+  pointer-events: none;
+}
+
+.resources-dialog {
+  width: min(38rem, 92vw);
+}
+
+.resources-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.resources-table th,
+.resources-table td {
+  text-align: left;
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--gc-border);
+  vertical-align: top;
+}
+
+.resources-table thead th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gc-text-muted);
+}
+
+.resources-table__warning summary {
+  cursor: pointer;
+  color: #9a3412;
+  font-weight: bold;
+}
+
+.resources-table__warning ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+}
+
+.resources-dialog__unassigned {
+  color: var(--gc-text-muted);
+  font-size: 0.9rem;
+}

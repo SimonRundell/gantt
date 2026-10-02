@@ -19,6 +19,12 @@ export const ZOOM_LEVELS = {
   quarter: { pxPerDay: 1.4, label: 'Quarter' },
 }
 
+/** @type {number} the tightest zoom allowed, in pixels per calendar day (a few years across a screen) */
+export const MIN_PX_PER_DAY = 0.5
+
+/** @type {number} the widest zoom allowed, in pixels per calendar day (a few days across a screen) */
+export const MAX_PX_PER_DAY = 80
+
 /** @type {number} days of empty space kept either side of the project's own dates */
 const RANGE_PADDING_DAYS = 14
 
@@ -29,6 +35,58 @@ const RANGE_PADDING_DAYS = 14
  */
 export function pxPerDayFor(zoom) {
   return (ZOOM_LEVELS[zoom] ?? ZOOM_LEVELS.week).pxPerDay
+}
+
+/**
+ * Keeps a pixels-per-day value inside the zoom limits.
+ * @param {number} pxPerDay - the requested pixels per calendar day
+ * @returns {number} the value limited to the allowed range
+ */
+export function clampPxPerDay(pxPerDay) {
+  return Math.min(MAX_PX_PER_DAY, Math.max(MIN_PX_PER_DAY, pxPerDay))
+}
+
+/**
+ * Chooses which header style (day, week, month or quarter ticks)
+ * suits a pixels-per-day value, so a freely zoomed timeline still
+ * gets readable labels.
+ * @param {number} pxPerDay - pixels per calendar day
+ * @returns {ZoomLevel} the nearest zoom level's header style
+ */
+export function levelForPxPerDay(pxPerDay) {
+  if (pxPerDay >= 22) return 'day'
+  if (pxPerDay >= 9) return 'week'
+  if (pxPerDay >= 2.8) return 'month'
+  return 'quarter'
+}
+
+/**
+ * Works out the zoom to use for a project's view: a freely chosen
+ * `pxPerDay` (set by the mouse wheel) wins, otherwise the preset
+ * zoom level's value.
+ * @param {{zoom?: string, pxPerDay?: number|null}} view - the project's view settings
+ * @returns {{pxPerDay: number, level: ZoomLevel, custom: boolean}} the pixels per day, the header style to use, and whether the zoom is a free one
+ */
+export function resolveScale(view) {
+  const custom = typeof view.pxPerDay === 'number' && Number.isFinite(view.pxPerDay)
+  const pxPerDay = custom ? clampPxPerDay(view.pxPerDay) : pxPerDayFor(view.zoom)
+  return { pxPerDay, level: levelForPxPerDay(pxPerDay), custom }
+}
+
+/**
+ * Works out the new pixels-per-day after a mouse wheel (or trackpad
+ * pinch) step. Rolling the wheel away from you zooms in, towards you
+ * zooms out. One ordinary wheel notch changes the zoom by about a
+ * fifth, and the small deltas from a trackpad give smooth steps.
+ * @param {number} current - the current pixels per calendar day
+ * @param {number} deltaY - the wheel event's `deltaY`
+ * @param {number} [deltaMode] - the wheel event's `deltaMode` (0 pixels, 1 lines, 2 pages)
+ * @returns {number} the new pixels per calendar day, within the zoom limits
+ */
+export function zoomAfterWheel(current, deltaY, deltaMode = 0) {
+  const pixels = deltaY * (deltaMode === 1 ? 16 : deltaMode === 2 ? 400 : 1)
+  const factor = Math.min(2, Math.max(0.5, Math.exp(-pixels * 0.002)))
+  return clampPxPerDay(current * factor)
 }
 
 /**
@@ -144,14 +202,15 @@ function addMonths(iso, n) {
  * Builds the two header tiers (a coarse row above a fine row) for the
  * timeline at a given zoom level, as a list of ticks each with an x
  * offset, a pixel width and a label.
- * @param {ZoomLevel} zoom - the current zoom level
+ * @param {ZoomLevel} zoom - the header style to build (day, week, month or quarter)
  * @param {string} startISO - the timeline's range start date
  * @param {string} endISO - the timeline's range end date
  * @param {number} weekStartsOn - 0 (Sunday) or 1 (Monday)
+ * @param {number} [pxPerDayOverride] - pixels per calendar day, when the zoom is not exactly the preset for `zoom`
  * @returns {{minorTicks: {x: number, width: number, label: string}[], majorTicks: {x: number, width: number, label: string}[]}} the two header tiers
  */
-export function buildHeaderTiers(zoom, startISO, endISO, weekStartsOn) {
-  const pxPerDay = pxPerDayFor(zoom)
+export function buildHeaderTiers(zoom, startISO, endISO, weekStartsOn, pxPerDayOverride) {
+  const pxPerDay = pxPerDayOverride ?? pxPerDayFor(zoom)
   const minorTicks = []
   const majorTicks = []
 

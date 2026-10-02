@@ -9,7 +9,9 @@ const SHORTCUTS = [
   { keys: 'F2, or Enter on a selected row', description: 'Rename the selected task' },
   { keys: 'Tab / Shift+Tab', description: 'Move focus between controls' },
   { keys: 'Esc', description: 'Close the open dialog' },
-  { keys: 'Ctrl + scroll wheel', description: 'Zoom the timeline in or out' },
+  { keys: 'Scroll wheel over the timeline', description: 'Zoom in or out around the pointer' },
+  { keys: 'Shift + scroll wheel', description: 'Scroll the timeline sideways' },
+  { keys: 'Alt + scroll wheel', description: 'Scroll the timeline up and down the rows' },
   { keys: '?', description: 'Show this list' },
 ]
 

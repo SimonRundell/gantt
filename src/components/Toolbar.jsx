@@ -11,7 +11,7 @@ import Icon from './Icon.jsx'
  * @param {object} props
  * @param {string} props.title - the project's current title
  * @param {(title: string) => void} props.onTitleChange - called when the title is edited and committed
- * @param {string} props.zoom - the current zoom level
+ * @param {string} props.zoom - the current zoom level, or 'custom' after zooming with the mouse wheel
  * @param {(zoom: string) => void} props.onZoomChange - called when a new zoom level is chosen
  * @param {boolean} props.canUndo - whether there is anything to undo
  * @param {boolean} props.canRedo - whether there is anything to redo
@@ -34,6 +34,13 @@ import Icon from './Icon.jsx'
  * @param {() => void} props.onShare - called when the share button is used
  * @param {() => void} props.onExport - called when the export (PNG/PDF) button is used
  * @param {() => void} props.onPrint - called when the print button is used
+ * @param {boolean} props.detailsOpen - whether the task details panel is showing
+ * @param {() => void} props.onToggleDetails - called when the Details button is used
+ * @param {string} props.snap - the current drag snapping, 'day' or 'week'
+ * @param {(snap: string) => void} props.onSnapChange - called when a new snapping option is chosen
+ * @param {() => void} props.onOpenColumns - called when the Columns button is used
+ * @param {() => void} props.onOpenResources - called when the Resources button is used
+ * @param {() => void} props.onOpenBaseline - called when the Baseline button is used
  * @param {() => void} props.onOpenCalendar - called when the working calendar button is used
  * @param {() => void} props.onShowShortcuts - called when the keyboard shortcuts button is used
  * @returns {JSX.Element} the toolbar
@@ -64,6 +71,13 @@ function Toolbar({
   onShare,
   onExport,
   onPrint,
+  detailsOpen,
+  onToggleDetails,
+  snap,
+  onSnapChange,
+  onOpenColumns,
+  onOpenResources,
+  onOpenBaseline,
   onOpenCalendar,
   onShowShortcuts,
 }) {
@@ -175,12 +189,41 @@ function Toolbar({
             <Icon name="trash" />
             Delete
           </button>
+          <button
+            type="button"
+            className={`btn btn--ghost${detailsOpen ? ' btn--active' : ''}`}
+            onClick={onToggleDetails}
+            aria-pressed={detailsOpen}
+          >
+            <Icon name="panel" />
+            Details
+          </button>
+        </div>
+
+        <div className="toolbar__group" role="group" aria-label="Plan settings">
+          <button type="button" className="btn btn--ghost" onClick={onOpenCalendar} disabled={readOnly}>
+            <Icon name="calendar" />
+            Calendar
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onOpenColumns}>
+            <Icon name="columns" />
+            Columns
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onOpenResources}>
+            <Icon name="users" />
+            Resources
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onOpenBaseline}>
+            <Icon name="flag" />
+            Baseline
+          </button>
         </div>
 
         <div className="toolbar__group toolbar__group--end">
           <label className="toolbar__zoom">
             Zoom
             <select value={zoom} onChange={(event) => onZoomChange(event.target.value)}>
+              {zoom === 'custom' && <option value="custom">Custom</option>}
               {Object.entries(ZOOM_LEVELS).map(([value, { label }]) => (
                 <option key={value} value={value}>
                   {label}
@@ -189,10 +232,13 @@ function Toolbar({
             </select>
           </label>
 
-          <button type="button" className="btn" onClick={onOpenCalendar} disabled={readOnly}>
-            <Icon name="calendar" />
-            Calendar
-          </button>
+          <label className="toolbar__zoom">
+            Snap
+            <select value={snap} onChange={(event) => onSnapChange(event.target.value)}>
+              <option value="day">Day</option>
+              <option value="week">Week</option>
+            </select>
+          </label>
 
           <button type="button" className="btn" onClick={onGoToToday}>
             <Icon name="today" />

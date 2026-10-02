@@ -10,8 +10,14 @@ A free, login-free Gantt chart tool for planning coursework and group projects. 
 - Four dependency types (finish-to-start, start-to-start, finish-to-finish, start-to-finish) with lag, created by dragging between bars. Circular dependencies are refused with a plain English message.
 - Automatic scheduling around a working calendar: choose working days and add holidays or closures (single days or ranges, plus built-in England bank holidays for 2026 and 2027) in the Calendar dialog.
 - Critical path highlighting.
+- Task details panel: edit name, type, start, duration, percent complete, assignee, colour and notes, and duplicate a task or whole group. Start, duration and percent can also be edited straight in the table.
+- Baseline: save the plan as a baseline, see it as a grey bar under each task, and read the variance in days.
+- Column chooser (including predecessors, notes and variance) and an option to show assignees on the bars.
+- Resources summary: tasks per person, with a warning when someone has overlapping tasks.
+- Snap dragging to days or weeks.
+- Every bar colour also has its own pattern, so charts still read in black and white and for colour blind users.
 - Undo and redo (100 steps).
-- Zoom: day, week, month and quarter.
+- Zoom: day, week, month and quarter presets, or roll the mouse wheel over the timeline to zoom smoothly around the pointer.
 - Autosave, with a conflict dialog if two people save at once so nothing is lost silently.
 - Share links: an edit link and a view-only link. No accounts.
 - Download and upload as a `.json` file.
@@ -132,7 +138,9 @@ On Windows, use Laragon or Windows Task Scheduler to run `php.exe` with the full
 | F2, or Enter on a selected row | Rename the selected task |
 | Tab and Shift+Tab | Move focus between controls |
 | Esc | Close the open dialog |
-| Ctrl + scroll wheel | Zoom the timeline |
+| Scroll wheel over the timeline | Zoom in or out around the pointer |
+| Shift + scroll wheel | Scroll the timeline sideways |
+| Alt + scroll wheel | Scroll the timeline up and down the rows |
 | ? | Show the shortcut list |
 
 ## Project layout

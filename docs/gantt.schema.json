@@ -34,6 +34,7 @@
       "additionalProperties": true,
       "properties": {
         "zoom": { "type": "string", "enum": ["day", "week", "month", "quarter"] },
+        "pxPerDay": { "type": ["number", "null"], "minimum": 0.5, "maximum": 80 },
         "showCriticalPath": { "type": "boolean" },
         "showBaseline": { "type": "boolean" },
         "columns": {

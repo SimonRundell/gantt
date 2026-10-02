@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_CALENDAR,
   isWorkingDay,
+  nearestWeekStart,
   nextWorkingDay,
   previousWorkingDay,
   shiftByWorkingDays,
@@ -119,5 +120,21 @@ describe('ukBankHolidaysForYear', () => {
 
   it('returns an empty list for a year with no data', () => {
     expect(ukBankHolidaysForYear(1999)).toEqual([])
+  })
+})
+
+describe('nearestWeekStart', () => {
+  it('rounds back to Monday early in the week and forward late in the week', () => {
+    expect(nearestWeekStart('2026-10-05', 1)).toBe('2026-10-05') // Mon
+    expect(nearestWeekStart('2026-10-07', 1)).toBe('2026-10-05') // Wed
+    expect(nearestWeekStart('2026-10-08', 1)).toBe('2026-10-05') // Thu is 3 days in, still rounds back
+    expect(nearestWeekStart('2026-10-09', 1)).toBe('2026-10-12') // Fri rounds forward
+    expect(nearestWeekStart('2026-10-11', 1)).toBe('2026-10-12') // Sun
+  })
+
+  it('respects a Sunday week start', () => {
+    expect(nearestWeekStart('2026-10-04', 0)).toBe('2026-10-04') // Sun
+    expect(nearestWeekStart('2026-10-06', 0)).toBe('2026-10-04') // Tue
+    expect(nearestWeekStart('2026-10-08', 0)).toBe('2026-10-11') // Thu
   })
 })

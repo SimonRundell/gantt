@@ -130,6 +130,73 @@ describe('ADD_DEPENDENCY', () => {
   })
 })
 
+describe('DUPLICATE_TASK', () => {
+  it('copies a task directly after the original and selects the copy', () => {
+    const state = twoTaskState()
+    const next = projectReducer(state, { type: 'DUPLICATE_TASK', taskId: 'a' })
+    const names = [...next.project.tasks].sort((x, y) => x.order - y.order).map((t) => t.name)
+    expect(names).toEqual(['Task A', 'Task A (copy)', 'Task B'])
+    const copy = next.project.tasks.find((t) => t.name === 'Task A (copy)')
+    expect(copy.id).not.toBe('a')
+    expect(next.selection.taskId).toBe(copy.id)
+  })
+
+  it('copies a group with its children and their internal dependencies', () => {
+    let state = twoTaskState()
+    state = projectReducer(state, { type: 'INDENT_TASK', taskId: 'b' }) // b becomes a child of a
+    state = projectReducer(state, { type: 'ADD_TASK', afterTaskId: 'b', taskType: 'task' })
+    const child2 = state.project.tasks.find((t) => t.name === 'New task')
+    state = projectReducer(state, { type: 'ADD_DEPENDENCY', from: 'b', to: child2.id, depType: 'FS', lagDays: 0 })
+
+    const next = projectReducer(state, { type: 'DUPLICATE_TASK', taskId: 'a' })
+    expect(next.project.tasks).toHaveLength(state.project.tasks.length * 2)
+    expect(next.project.dependencies).toHaveLength(2)
+    const copyIds = new Set(next.project.tasks.filter((t) => !state.project.tasks.some((o) => o.id === t.id)).map((t) => t.id))
+    const copiedDep = next.project.dependencies.find((d) => copyIds.has(d.from))
+    expect(copyIds.has(copiedDep.to)).toBe(true)
+  })
+})
+
+describe('baseline', () => {
+  it('records every task date, shows the baseline, and can be cleared', () => {
+    const state = twoTaskState()
+    const set = projectReducer(state, { type: 'SET_BASELINE' })
+    expect(set.project.tasks[0].baseline).toEqual({ start: '2026-10-05', durationDays: 1 })
+    expect(set.project.view.showBaseline).toBe(true)
+
+    const cleared = projectReducer(set, { type: 'CLEAR_BASELINE' })
+    expect(cleared.project.tasks.every((t) => t.baseline === null)).toBe(true)
+    expect(cleared.project.view.showBaseline).toBe(false)
+  })
+})
+
+describe('SET_VIEW_OPTION', () => {
+  it('sets a view option without adding an undo step', () => {
+    const state = twoTaskState()
+    const next = projectReducer(state, { type: 'SET_VIEW_OPTION', key: 'snap', value: 'week' })
+    expect(next.project.view.snap).toBe('week')
+    expect(next.history.past).toHaveLength(0)
+  })
+})
+
+describe('zoom', () => {
+  it('SET_SCALE sets a free zoom and a matching header style, within limits', () => {
+    const state = twoTaskState()
+    const next = projectReducer(state, { type: 'SET_SCALE', pxPerDay: 30 })
+    expect(next.project.view.pxPerDay).toBe(30)
+    expect(next.project.view.zoom).toBe('day')
+    expect(projectReducer(state, { type: 'SET_SCALE', pxPerDay: 99999 }).project.view.pxPerDay).toBe(80)
+    expect(next.history.past).toHaveLength(0)
+  })
+
+  it('choosing a preset zoom clears the free zoom', () => {
+    let state = projectReducer(twoTaskState(), { type: 'SET_SCALE', pxPerDay: 30 })
+    state = projectReducer(state, { type: 'SET_ZOOM', zoom: 'month' })
+    expect(state.project.view.zoom).toBe('month')
+    expect(state.project.view.pxPerDay).toBeNull()
+  })
+})
+
 describe('SET_CALENDAR', () => {
   it('moves tasks that start on a new holiday to the next working day, and can be undone', () => {
     const state = twoTaskState() // both tasks start Mon 2026-10-05

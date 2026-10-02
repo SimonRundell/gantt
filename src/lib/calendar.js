@@ -168,3 +168,16 @@ export const UK_BANK_HOLIDAYS = {
 export function ukBankHolidaysForYear(year) {
   return UK_BANK_HOLIDAYS[year] ?? []
 }
+
+/**
+ * Finds the start of the display week nearest to a date. A date three
+ * days or less into a week rounds back to that week's start; later
+ * dates round forward to the next week's start.
+ * @param {string} iso - a `YYYY-MM-DD` string
+ * @param {0|1} weekStartsOn - the first day of the display week, 0 (Sun) or 1 (Mon)
+ * @returns {string} the date of the nearest week start
+ */
+export function nearestWeekStart(iso, weekStartsOn) {
+  const daysIntoWeek = (dayOfWeek(iso) - weekStartsOn + 7) % 7
+  return addCalendarDays(iso, daysIntoWeek <= 3 ? -daysIntoWeek : 7 - daysIntoWeek)
+}
