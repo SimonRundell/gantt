@@ -96,14 +96,18 @@ function TaskRow({
             }}
           />
         ) : (
-          <span
+          <button
+            type="button"
+            className="task-row__cell-button"
+            disabled={readOnly}
+            aria-label={`Assignee for ${task.name}: ${task.assignee || 'none'}, click to edit`}
             onClick={(event) => {
               event.stopPropagation()
-              if (!readOnly) setEditingAssignee(true)
+              setEditingAssignee(true)
             }}
           >
             {task.assignee || ''}
-          </span>
+          </button>
         )
       case 'predecessors':
         return (predecessorsByTask.get(task.id) ?? [])

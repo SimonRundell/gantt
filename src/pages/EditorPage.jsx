@@ -5,14 +5,13 @@ import DependencyEditor from '../components/DependencyEditor.jsx'
 import ExportDialog from '../components/ExportDialog.jsx'
 import FullChartView from '../components/FullChartView.jsx'
 import ShareDialog from '../components/ShareDialog.jsx'
+import ShortcutsDialog from '../components/ShortcutsDialog.jsx'
 import StatusBar from '../components/StatusBar.jsx'
 import TaskTable from '../components/TaskTable.jsx'
 import Timeline from '../components/Timeline.jsx'
 import Toast from '../components/Toast.jsx'
 import Toolbar from '../components/Toolbar.jsx'
 import UploadChoiceDialog from '../components/UploadChoiceDialog.jsx'
-import { snapForwardToWorkingDay, workingDaysBetween } from '../lib/calendar.js'
-import { addCalendarDays } from '../lib/dates.js'
 import { downloadProjectJson } from '../lib/downloadFile.js'
 import { exportChartAsPdf, exportChartAsPng } from '../lib/exportChart.js'
 import { migrate } from '../lib/migrate.js'
@@ -20,15 +19,15 @@ import { recordRecentProject } from '../lib/recentProjects.js'
 import { computeEnd, criticalPath } from '../lib/scheduler.js'
 import { createPerformanceSampleProject } from '../lib/sampleProject.js'
 import { flattenVisibleRows } from '../lib/taskTree.js'
-import { pxPerDayFor } from '../lib/timelineScale.js'
 import { sanitizeForImport, validateProject } from '../lib/validate.js'
+import { useAutosave } from '../hooks/useAutosave.js'
+import { useBarDrag } from '../hooks/useBarDrag.js'
 import { useProject } from '../hooks/useProject.js'
-import { createProject, getProject, saveProject } from '../services/projects.js'
+import { createProject, getProject } from '../services/projects.js'
 import { ProjectProvider } from '../state/ProjectContext.jsx'
 
 const MIN_TABLE_WIDTH = 240
 const MAX_TABLE_WIDTH = 720
-const AUTOSAVE_DELAY_MS = 1500
 
 /**
  * The project editor, reached at /p/:id. Loads the project from the
@@ -94,7 +93,12 @@ function EditorPage() {
   }
 
   return (
-    <ProjectProvider project={load.project}>
+    // Keyed on id so navigating from one project straight to another
+    // (without an intervening full page load) remounts the whole
+    // subtree fresh, rather than reusing component instances whose
+    // state (undo history, save status, dialogs) was built for a
+    // different project.
+    <ProjectProvider key={id} project={load.project}>
       <EditorContent
         projectId={id}
         editToken={load.editToken}
@@ -149,9 +153,8 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
   const [tableWidth, setTableWidth] = useState(360)
   const [scrollTop, setScrollTop] = useState(0)
   const [selectedDependencyId, setSelectedDependencyId] = useState(null)
-  const [saveStatus, setSaveStatus] = useState(canEdit ? 'Saved' : 'View only')
-  const [conflict, setConflict] = useState(null)
   const [shareOpen, setShareOpen] = useState(justCreated)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [uploadChoice, setUploadChoice] = useState(null)
   const [exportOpen, setExportOpen] = useState(false)
   const timelineApiRef = useRef(null)
@@ -190,70 +193,13 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
 
   const handleScroll = useCallback((value) => setScrollTop(value), [])
 
-  // Tracks the content of the version already saved (or just loaded),
-  // as a JSON string for a cheap equality check. Starting it at null
-  // and filling it in on the first effect run - rather than a simple
-  // "is this the first render" boolean - means React StrictMode's
-  // deliberate double-invocation of effects in development can't
-  // trick this into firing a spurious extra save: the second
-  // invocation just finds the content unchanged.
-  const lastSavedContentRef = useRef(null)
-
-  /**
-   * Saves the current project to the server. On success, updates the
-   * revision the editor is tracking. On a 409 (someone else saved a
-   * newer version first), opens the conflict dialog instead of
-   * silently losing either copy.
-   * @returns {Promise<void>} resolves once the save attempt finishes
-   */
-  const save = useCallback(async () => {
-    if (!canEdit || !editToken || projectId == null) return
-    const content = {
-      title: project.title,
-      calendar: project.calendar,
-      view: project.view,
-      tasks: project.tasks,
-      dependencies: project.dependencies,
-    }
-    setSaveStatus('Saving…')
-    try {
-      const result = await saveProject(projectId, editToken, { revision: project.revision, ...content })
-      rawDispatch({ type: 'SET_SERVER_META', fields: { revision: result.revision, updatedAt: result.updatedAt } })
-      lastSavedContentRef.current = JSON.stringify(content)
-      setSaveStatus('Saved')
-    } catch (err) {
-      if (err.response?.status === 409) {
-        setConflict(err.response.data.project)
-        setSaveStatus('Unsaved changes')
-      } else {
-        setSaveStatus('Could not save - will try again')
-      }
-    }
-  }, [canEdit, editToken, projectId, project, rawDispatch])
-
-  useEffect(() => {
-    const current = JSON.stringify({
-      title: project.title,
-      calendar: project.calendar,
-      view: project.view,
-      tasks: project.tasks,
-      dependencies: project.dependencies,
-    })
-
-    if (lastSavedContentRef.current === null) {
-      lastSavedContentRef.current = current
-      return undefined
-    }
-    if (current === lastSavedContentRef.current || !canEdit || conflict) return undefined
-
-    setSaveStatus('Unsaved changes')
-    const timer = setTimeout(save, AUTOSAVE_DELAY_MS)
-    return () => clearTimeout(timer)
-    // Only the undoable content and the calendar/title/view are worth
-    // autosaving on; re-running this effect on every render would
-    // debounce against itself.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project.title, project.calendar, project.view, project.tasks, project.dependencies])
+  const { saveStatus, setSaveStatus, conflict, setConflict, save, markSaved } = useAutosave({
+    projectId,
+    editToken,
+    canEdit,
+    project,
+    rawDispatch,
+  })
 
   useEffect(() => {
     /**
@@ -278,6 +224,9 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
       } else if (!isEditingText && (event.key === 'Delete' || event.key === 'Backspace') && selection.taskId) {
         event.preventDefault()
         dispatch({ type: 'DELETE_TASK', taskId: selection.taskId })
+      } else if (!isEditingText && event.key === '?') {
+        event.preventDefault()
+        setShortcutsOpen(true)
       }
     }
 
@@ -309,88 +258,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
     window.addEventListener('pointerup', handleUp)
   }
 
-  const dragStateRef = useRef(null)
-
-  /**
-   * Starts a bar drag: moving the whole bar, resizing one edge, or
-   * dragging the percent-complete handle. One BEGIN_DRAG/END_DRAG pair
-   * wraps the whole gesture so it becomes a single undo step.
-   * @param {string} taskId - the task being dragged
-   * @param {import('react').PointerEvent} event - the pointer down event
-   * @param {'move'|'resize-start'|'resize-end'|'percent'} handle - which part of the bar was grabbed
-   * @param {number} barWidth - the bar's current width in pixels, used for percent dragging
-   * @returns {void}
-   */
-  function handleBarPointerDown(taskId, event, handle, barWidth) {
-    if (!canEdit) return
-    const task = tasksById.get(taskId)
-    if (!task) return
-
-    dragStateRef.current = {
-      taskId,
-      handle,
-      startX: event.clientX,
-      originalStart: task.start,
-      originalEnd: computeEnd(task, project.calendar),
-      originalPercent: task.percent,
-      barWidth,
-      pxPerDay: pxPerDayFor(project.view.zoom),
-    }
-    dispatch({ type: 'SELECT_TASK', taskId })
-    dispatch({ type: 'BEGIN_DRAG' })
-
-    window.addEventListener('pointermove', handleDragMove)
-    window.addEventListener('pointerup', handleDragUp)
-  }
-
-  /**
-   * Continues an in-progress bar drag, translating the pointer's
-   * movement into a date, duration or percent change and previewing
-   * it live without pushing an undo step yet.
-   * @param {PointerEvent} event - the pointer move event
-   * @returns {void}
-   */
-  function handleDragMove(event) {
-    const drag = dragStateRef.current
-    if (!drag) return
-    const deltaPx = event.clientX - drag.startX
-
-    if (drag.handle === 'percent') {
-      const deltaPercent = drag.barWidth > 0 ? (deltaPx / drag.barWidth) * 100 : 0
-      const percent = Math.max(0, Math.min(100, Math.round(drag.originalPercent + deltaPercent)))
-      dispatch({ type: 'DRAG_PREVIEW', taskId: drag.taskId, fields: { percent } })
-      return
-    }
-
-    const deltaDays = Math.round(deltaPx / drag.pxPerDay)
-
-    if (drag.handle === 'move') {
-      const start = snapForwardToWorkingDay(addCalendarDays(drag.originalStart, deltaDays), project.calendar)
-      dispatch({ type: 'DRAG_PREVIEW', taskId: drag.taskId, fields: { start } })
-    } else if (drag.handle === 'resize-end') {
-      const rawEnd = addCalendarDays(drag.originalEnd, deltaDays)
-      const end = snapForwardToWorkingDay(rawEnd, project.calendar)
-      const durationDays = Math.max(1, workingDaysBetween(drag.originalStart, end, project.calendar) + 1)
-      dispatch({ type: 'DRAG_PREVIEW', taskId: drag.taskId, fields: { durationDays } })
-    } else if (drag.handle === 'resize-start') {
-      const rawStart = addCalendarDays(drag.originalStart, deltaDays)
-      const start = snapForwardToWorkingDay(rawStart, project.calendar)
-      if (start > drag.originalEnd) return
-      const durationDays = Math.max(1, workingDaysBetween(start, drag.originalEnd, project.calendar) + 1)
-      dispatch({ type: 'DRAG_PREVIEW', taskId: drag.taskId, fields: { start, durationDays } })
-    }
-  }
-
-  /**
-   * Ends an in-progress bar drag and commits it as one undo step.
-   * @returns {void}
-   */
-  function handleDragUp() {
-    window.removeEventListener('pointermove', handleDragMove)
-    window.removeEventListener('pointerup', handleDragUp)
-    dragStateRef.current = null
-    dispatch({ type: 'END_DRAG' })
-  }
+  const handleBarPointerDown = useBarDrag({ project, tasksById, dispatch, canEdit })
 
   /**
    * Creates a dependency after a connector drag completes over a
@@ -490,6 +358,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
         onShare={() => setShareOpen(true)}
         onExport={() => setExportOpen(true)}
         onPrint={() => window.open(`/print/${projectId}`, '_blank', 'noopener')}
+        onShowShortcuts={() => setShortcutsOpen(true)}
       />
       <input
         ref={fileInputRef}
@@ -615,7 +484,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
               type: 'SET_SERVER_META',
               fields: { revision: conflict.revision, updatedAt: conflict.updatedAt },
             })
-            lastSavedContentRef.current = JSON.stringify({
+            markSaved({
               title: conflict.title,
               calendar: conflict.calendar,
               view: conflict.view,
@@ -634,6 +503,8 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
       )}
 
       {exportOpen && <ExportDialog onExport={handleExport} onClose={() => setExportOpen(false)} />}
+
+      {shortcutsOpen && <ShortcutsDialog onClose={() => setShortcutsOpen(false)} />}
 
       {/* Rendered off-screen at full size (no scrolling, no windowing) so
           PNG/PDF export always captures the entire chart, not just the

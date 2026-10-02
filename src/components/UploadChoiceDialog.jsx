@@ -1,3 +1,5 @@
+import Dialog from './Dialog.jsx'
+
 /**
  * Shown after a valid `.json` file is uploaded into the editor, so a
  * student never has their current work silently overwritten.
@@ -10,29 +12,21 @@
  */
 function UploadChoiceDialog({ fileTitle, onOpenAsNew, onReplace, onCancel }) {
   return (
-    <div className="dialog-overlay" onClick={onCancel}>
-      <div
-        className="dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Open uploaded file"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <h2>Open "{fileTitle}"</h2>
-        <p>This file looks like a valid Gantt chart. What would you like to do with it?</p>
-        <div className="dialog__actions dialog__actions--stacked">
-          <button type="button" className="dialog__primary" onClick={onOpenAsNew}>
-            Open as a new chart
-          </button>
-          <button type="button" onClick={onReplace}>
-            Replace the current chart
-          </button>
-          <button type="button" onClick={onCancel}>
-            Cancel
-          </button>
-        </div>
+    <Dialog open onClose={onCancel} label="Open uploaded file">
+      <h2>Open "{fileTitle}"</h2>
+      <p>This file looks like a valid Gantt chart. What would you like to do with it?</p>
+      <div className="dialog__actions dialog__actions--stacked">
+        <button type="button" className="dialog__primary" onClick={onOpenAsNew}>
+          Open as a new chart
+        </button>
+        <button type="button" onClick={onReplace}>
+          Replace the current chart
+        </button>
+        <button type="button" onClick={onCancel}>
+          Cancel
+        </button>
       </div>
-    </div>
+    </Dialog>
   )
 }
 

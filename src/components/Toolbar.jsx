@@ -32,6 +32,7 @@ import { ZOOM_LEVELS } from '../lib/timelineScale.js'
  * @param {() => void} props.onShare - called when the share button is used
  * @param {() => void} props.onExport - called when the export (PNG/PDF) button is used
  * @param {() => void} props.onPrint - called when the print button is used
+ * @param {() => void} props.onShowShortcuts - called when the keyboard shortcuts button is used
  * @returns {JSX.Element} the toolbar
  */
 function Toolbar({
@@ -60,6 +61,7 @@ function Toolbar({
   onShare,
   onExport,
   onPrint,
+  onShowShortcuts,
 }) {
   const [draftTitle, setDraftTitle] = useState(title)
 
@@ -156,6 +158,9 @@ function Toolbar({
         </button>
         <button type="button" onClick={onPrint}>
           Print
+        </button>
+        <button type="button" onClick={onShowShortcuts} aria-label="Keyboard shortcuts">
+          ?
         </button>
       </div>
     </div>

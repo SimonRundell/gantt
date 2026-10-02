@@ -52,6 +52,7 @@ export function validateProject(doc) {
   }
 
   const taskIds = new Set(doc.tasks.map((t) => t.id))
+  const taskById = new Map(doc.tasks.map((t) => [t.id, t]))
   const seen = new Set()
   for (const task of doc.tasks) {
     if (seen.has(task.id)) {
@@ -66,17 +67,15 @@ export function validateProject(doc) {
 
   for (const dep of doc.dependencies) {
     if (!taskIds.has(dep.from) || !taskIds.has(dep.to)) {
-      const fromTask = doc.tasks.find((t) => t.id === dep.from)
-      const toTask = doc.tasks.find((t) => t.id === dep.to)
-      const fromName = fromTask?.name ?? dep.from
-      const toName = toTask?.name ?? dep.to
+      const fromName = taskById.get(dep.from)?.name ?? dep.from
+      const toName = taskById.get(dep.to)?.name ?? dep.to
       problems.push(`Task '${toName}' depends on '${fromName}', but that task does not exist.`)
     }
   }
 
   const cycle = detectCycle(doc.dependencies)
   if (cycle) {
-    const names = cycle.map((id) => doc.tasks.find((t) => t.id === id)?.name ?? id)
+    const names = cycle.map((id) => taskById.get(id)?.name ?? id)
     problems.push(`These tasks depend on each other in a loop: ${names.join(' -> ')}.`)
   }
 

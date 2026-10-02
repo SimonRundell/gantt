@@ -238,6 +238,7 @@ function Timeline({
           onPointerDown={handleBackgroundPointerDown}
           onPointerMove={handleBackgroundPointerMove}
           onPointerUp={handleBackgroundPointerUp}
+          onPointerCancel={handleBackgroundPointerUp}
         >
           <TimelineGrid
             startISO={startISO}

@@ -16,7 +16,7 @@
   --gc-purple: #7c3aed;
   --gc-teal: #0d9488;
   --gc-red: #dc2626;
-  --gc-yellow: #ca8a04;
+  --gc-yellow: #a16207;
   --gc-grey: #52525b;
 
   /* UI chrome */
@@ -456,6 +456,27 @@ button {
   gap: 2px;
 }
 
+.task-row__cell-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-row__cell-button:not(:disabled):hover {
+  text-decoration: underline;
+}
+
+.task-row__cell-button:disabled {
+  cursor: default;
+}
+
 /* ---------------------------------------------------------------- */
 /* Timeline                                                           */
 /* ---------------------------------------------------------------- */
@@ -704,16 +725,7 @@ button {
 /* ---------------------------------------------------------------- */
 
 .dependency-editor {
-  position: fixed;
-  right: 1rem;
-  bottom: 3rem;
-  width: 15rem;
-  background: var(--gc-bg);
-  border: 1px solid var(--gc-border);
-  border-radius: 6px;
-  box-shadow: 0 2px 10px rgb(0 0 0 / 15%);
-  padding: 0.75rem;
-  z-index: 5;
+  width: 16rem;
 }
 
 .dependency-editor__close {
@@ -789,24 +801,20 @@ button {
 /* Dialogs                                                            */
 /* ---------------------------------------------------------------- */
 
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgb(0 0 0 / 40%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 20;
-}
-
 .dialog {
   background: var(--gc-bg);
+  color: var(--gc-text);
+  border: none;
   border-radius: 8px;
   padding: 1.25rem;
   width: min(26rem, 90vw);
   max-height: 85vh;
   overflow-y: auto;
   box-shadow: 0 4px 24px rgb(0 0 0 / 25%);
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 40%);
 }
 
 .dialog h2 {
@@ -881,6 +889,26 @@ fieldset.dialog__field label {
 .dialog__close {
   margin-top: 1rem;
   width: 100%;
+}
+
+.shortcuts-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.shortcuts-table td {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--gc-border);
+  font-size: 0.85rem;
+}
+
+.shortcuts-table kbd {
+  font-family: 'Courier New', Courier, monospace;
+  background: var(--gc-surface);
+  border: 1px solid var(--gc-border);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.8rem;
 }
 
 /* ---------------------------------------------------------------- */

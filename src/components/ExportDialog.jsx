@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Dialog from './Dialog.jsx'
 
 /**
  * Lets a student choose PNG or PDF export, and for PDF the page size,
@@ -31,87 +32,78 @@ function ExportDialog({ onExport, onClose }) {
   }
 
   return (
-    <div className="dialog-overlay" onClick={() => !busy && onClose()}>
-      <div
-        className="dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Export chart"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <h2>Export chart</h2>
+    <Dialog open onClose={() => !busy && onClose()} label="Export chart">
+      <h2>Export chart</h2>
 
-        <fieldset className="dialog__field">
-          <legend>Format</legend>
-          <label>
-            <input type="radio" name="format" checked={format === 'png'} onChange={() => setFormat('png')} /> PNG
-            image
-          </label>
-          <label>
-            <input type="radio" name="format" checked={format === 'pdf'} onChange={() => setFormat('pdf')} /> PDF
-          </label>
-        </fieldset>
+      <fieldset className="dialog__field">
+        <legend>Format</legend>
+        <label>
+          <input type="radio" name="format" checked={format === 'png'} onChange={() => setFormat('png')} /> PNG image
+        </label>
+        <label>
+          <input type="radio" name="format" checked={format === 'pdf'} onChange={() => setFormat('pdf')} /> PDF
+        </label>
+      </fieldset>
 
-        {format === 'pdf' && (
-          <>
-            <fieldset className="dialog__field">
-              <legend>Page size</legend>
-              <label>
-                <input type="radio" name="pageSize" checked={pageSize === 'a4'} onChange={() => setPageSize('a4')} />{' '}
-                A4
-              </label>
-              <label>
-                <input type="radio" name="pageSize" checked={pageSize === 'a3'} onChange={() => setPageSize('a3')} />{' '}
-                A3
-              </label>
-            </fieldset>
+      {format === 'pdf' && (
+        <>
+          <fieldset className="dialog__field">
+            <legend>Page size</legend>
+            <label>
+              <input type="radio" name="pageSize" checked={pageSize === 'a4'} onChange={() => setPageSize('a4')} />{' '}
+              A4
+            </label>
+            <label>
+              <input type="radio" name="pageSize" checked={pageSize === 'a3'} onChange={() => setPageSize('a3')} />{' '}
+              A3
+            </label>
+          </fieldset>
 
-            <fieldset className="dialog__field">
-              <legend>Orientation</legend>
-              <label>
-                <input
-                  type="radio"
-                  name="orientation"
-                  checked={orientation === 'landscape'}
-                  onChange={() => setOrientation('landscape')}
-                />{' '}
-                Landscape
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="orientation"
-                  checked={orientation === 'portrait'}
-                  onChange={() => setOrientation('portrait')}
-                />{' '}
-                Portrait
-              </label>
-            </fieldset>
+          <fieldset className="dialog__field">
+            <legend>Orientation</legend>
+            <label>
+              <input
+                type="radio"
+                name="orientation"
+                checked={orientation === 'landscape'}
+                onChange={() => setOrientation('landscape')}
+              />{' '}
+              Landscape
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="orientation"
+                checked={orientation === 'portrait'}
+                onChange={() => setOrientation('portrait')}
+              />{' '}
+              Portrait
+            </label>
+          </fieldset>
 
-            <fieldset className="dialog__field">
-              <legend>Fit</legend>
-              <label>
-                <input type="radio" name="fit" checked={fit === 'width'} onChange={() => setFit('width')} /> Fit to
-                one page wide
-              </label>
-              <label>
-                <input type="radio" name="fit" checked={fit === 'tile'} onChange={() => setFit('tile')} /> Tile
-                across pages
-              </label>
-            </fieldset>
-          </>
-        )}
+          <fieldset className="dialog__field">
+            <legend>Fit</legend>
+            <label>
+              <input type="radio" name="fit" checked={fit === 'width'} onChange={() => setFit('width')} /> Fit to one
+              page wide
+            </label>
+            <label>
+              <input type="radio" name="fit" checked={fit === 'tile'} onChange={() => setFit('tile')} /> Tile across
+              pages
+            </label>
+          </fieldset>
+        </>
+      )}
 
-        <div className="dialog__actions">
-          <button type="button" onClick={onClose} disabled={busy}>
-            Cancel
-          </button>
-          <button type="button" className="dialog__primary" onClick={handleExport} disabled={busy}>
-            {busy ? 'Exporting…' : 'Export'}
-          </button>
-        </div>
+      <div className="dialog__actions">
+        <button type="button" onClick={onClose} disabled={busy}>
+          Cancel
+        </button>
+        <button type="button" className="dialog__primary" onClick={handleExport} disabled={busy}>
+          {busy ? 'Exporting…' : 'Export'}
+        </button>
       </div>
-    </div>
+    </Dialog>
   )
 }
 

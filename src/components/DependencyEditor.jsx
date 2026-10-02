@@ -1,3 +1,5 @@
+import Dialog from './Dialog.jsx'
+
 /** @type {{value: string, label: string}[]} the four dependency types, in the order offered in the editor */
 const DEPENDENCY_TYPES = [
   { value: 'FS', label: 'Finish to Start' },
@@ -7,7 +9,7 @@ const DEPENDENCY_TYPES = [
 ]
 
 /**
- * A small panel for editing or removing the selected dependency: its
+ * A small dialog for editing or removing the selected dependency: its
  * type, its lag in working days (negative allowed), or deleting it
  * outright.
  * @param {object} props
@@ -17,12 +19,12 @@ const DEPENDENCY_TYPES = [
  * @param {(type: string) => void} props.onChangeType - called when the dependency type is changed
  * @param {(lagDays: number) => void} props.onChangeLag - called when the lag is changed
  * @param {() => void} props.onDelete - called when the dependency should be removed
- * @param {() => void} props.onClose - called to close the panel without deleting
- * @returns {JSX.Element} the dependency editor panel
+ * @param {() => void} props.onClose - called to close the dialog without deleting
+ * @returns {JSX.Element} the dependency editor dialog
  */
 function DependencyEditor({ dependency, fromTask, toTask, onChangeType, onChangeLag, onDelete, onClose }) {
   return (
-    <div className="dependency-editor" role="dialog" aria-label="Edit dependency">
+    <Dialog open onClose={onClose} label="Edit dependency" className="dependency-editor">
       <button type="button" className="dependency-editor__close" onClick={onClose} aria-label="Close">
         ×
       </button>
@@ -50,7 +52,7 @@ function DependencyEditor({ dependency, fromTask, toTask, onChangeType, onChange
       <button type="button" className="dependency-editor__delete" onClick={onDelete}>
         Delete dependency
       </button>
-    </div>
+    </Dialog>
   )
 }
 

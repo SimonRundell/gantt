@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useId, useState } from 'react'
+import Dialog from './Dialog.jsx'
 
 /**
  * A dialog showing a project's edit and view links, with copy
@@ -13,23 +14,8 @@ import { useEffect, useRef, useState } from 'react'
  */
 function ShareDialog({ editLink, viewLink, onClose }) {
   const [copied, setCopied] = useState(null)
-  const dialogRef = useRef(null)
-
-  useEffect(() => {
-    dialogRef.current?.focus()
-
-    /**
-     * Closes the dialog on Escape, as every dialog in this app does.
-     * @param {KeyboardEvent} event - the keydown event
-     * @returns {void}
-     */
-    function handleKeyDown(event) {
-      if (event.key === 'Escape') onClose()
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+  const editId = useId()
+  const viewId = useId()
 
   /**
    * Copies a link to the clipboard, wrapped in try/catch since the
@@ -49,46 +35,36 @@ function ShareDialog({ editLink, viewLink, onClose }) {
   }
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <div
-        className="dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Share this chart"
-        tabIndex={-1}
-        ref={dialogRef}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <h2>Share this chart</h2>
-        <p className="dialog__notice">
-          Anyone with the edit link can change this chart. Do not put personal details in it.
-        </p>
+    <Dialog open onClose={onClose} label="Share this chart">
+      <h2>Share this chart</h2>
+      <p className="dialog__notice">
+        Anyone with the edit link can change this chart. Do not put personal details in it.
+      </p>
 
-        <label className="dialog__field">
-          Edit link (can change the chart)
-          <div className="dialog__link-row">
-            <input readOnly value={editLink} onFocus={(event) => event.target.select()} />
-            <button type="button" onClick={() => copyLink(editLink, 'edit')}>
-              {copied === 'edit' ? 'Copied' : 'Copy'}
-            </button>
-          </div>
-        </label>
-
-        <label className="dialog__field">
-          View link (read only)
-          <div className="dialog__link-row">
-            <input readOnly value={viewLink} onFocus={(event) => event.target.select()} />
-            <button type="button" onClick={() => copyLink(viewLink, 'view')}>
-              {copied === 'view' ? 'Copied' : 'Copy'}
-            </button>
-          </div>
-        </label>
-
-        <button type="button" className="dialog__close" onClick={onClose}>
-          Done
-        </button>
+      <div className="dialog__field">
+        <label htmlFor={editId}>Edit link (can change the chart)</label>
+        <div className="dialog__link-row">
+          <input id={editId} readOnly value={editLink} onFocus={(event) => event.target.select()} />
+          <button type="button" onClick={() => copyLink(editLink, 'edit')}>
+            {copied === 'edit' ? 'Copied' : 'Copy'}
+          </button>
+        </div>
       </div>
-    </div>
+
+      <div className="dialog__field">
+        <label htmlFor={viewId}>View link (read only)</label>
+        <div className="dialog__link-row">
+          <input id={viewId} readOnly value={viewLink} onFocus={(event) => event.target.select()} />
+          <button type="button" onClick={() => copyLink(viewLink, 'view')}>
+            {copied === 'view' ? 'Copied' : 'Copy'}
+          </button>
+        </div>
+      </div>
+
+      <button type="button" className="dialog__close" onClick={onClose}>
+        Done
+      </button>
+    </Dialog>
   )
 }
 
