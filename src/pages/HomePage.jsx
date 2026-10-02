@@ -6,6 +6,10 @@ import { loadRecentProjects, recordRecentProject } from '../lib/recentProjects.j
 import { TEMPLATES } from '../lib/templates.js'
 import { sanitizeForImport, validateProject } from '../lib/validate.js'
 import { createProject } from '../services/projects.js'
+import Icon from '../components/Icon.jsx'
+
+/** @type {Record<string, string>} icon shown on each starter template card, by template id */
+const TEMPLATE_ICONS = { esp: 'calendar', 'web-sprint': 'rocket', blank: 'file' }
 
 /**
  * The home page: start a new chart, pick a template, open a recent
@@ -75,68 +79,82 @@ function HomePage() {
   }
 
   return (
-    <main className="home-page">
-      <h1>Gantt Chart Planner</h1>
-      <p>Plan your coursework project, share the link with yourself or your group, and come back to it any time.</p>
-
-      {error && (
-        <p className="home-page__error" role="alert">
-          {error}
-        </p>
-      )}
-
-      <section className="home-page__section">
-        <h2>Start a new chart</h2>
-        <div className="home-page__template-grid">
-          {TEMPLATES.map((template) => (
-            <button
-              key={template.id}
-              type="button"
-              className="home-page__template-card"
-              disabled={busy}
-              onClick={() => createAndOpen(template.build())}
-            >
-              <strong>{template.name}</strong>
-              <span>{template.description}</span>
-            </button>
-          ))}
+    <div className="home">
+      <header className="home__hero">
+        <div className="home__hero-inner">
+          <h1>Gantt Chart Planner</h1>
+          <p>
+            Plan your coursework project, share the link with yourself or your group, and come back to it any
+            time.
+          </p>
         </div>
-      </section>
+      </header>
+      <main className="home-page">
+        {error && (
+          <p className="home-page__error" role="alert">
+            {error}
+          </p>
+        )}
 
-      <section className="home-page__section">
-        <h2>Open a saved file</h2>
-        <p>Have a chart saved as a <code>.json</code> file? Open it here.</p>
-        <button type="button" disabled={busy} onClick={() => fileInputRef.current?.click()}>
-          Upload a .json file
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="application/json,.json"
-          className="home-page__file-input"
-          onChange={handleUpload}
-          aria-label="Upload a project file"
-        />
-      </section>
-
-      {recents.length > 0 && (
         <section className="home-page__section">
-          <h2>Recent charts</h2>
-          <ul className="home-page__recent-list">
-            {recents.map((recent) => (
-              <li key={recent.id}>
-                <a href={recent.editToken ? `/p/${recent.id}?k=${recent.editToken}` : `/p/${recent.id}`}>
-                  {recent.title || 'Untitled project'}
-                </a>
-                <span className="home-page__recent-date">
-                  Opened {formatUKDate(recent.lastOpened.slice(0, 10))}
+          <h2>Start a new chart</h2>
+          <div className="home-page__template-grid">
+            {TEMPLATES.map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                className="home-page__template-card"
+                disabled={busy}
+                onClick={() => createAndOpen(template.build())}
+              >
+                <span className="home-page__template-icon">
+                  <Icon name={TEMPLATE_ICONS[template.id] ?? 'file'} />
                 </span>
-              </li>
+                <strong>{template.name}</strong>
+                <span>{template.description}</span>
+              </button>
             ))}
-          </ul>
+          </div>
         </section>
-      )}
-    </main>
+
+        <section className="home-page__section">
+          <h2>Open a saved file</h2>
+          <p>
+            Have a chart saved as a <code>.json</code> file? Open it here.
+          </p>
+          <button type="button" className="btn" disabled={busy} onClick={() => fileInputRef.current?.click()}>
+            <Icon name="upload" />
+            Upload a .json file
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="home-page__file-input"
+            onChange={handleUpload}
+            aria-label="Upload a project file"
+          />
+        </section>
+
+        {recents.length > 0 && (
+          <section className="home-page__section">
+            <h2>Recent charts</h2>
+            <ul className="home-page__recent-list">
+              {recents.map((recent) => (
+                <li key={recent.id}>
+                  <a href={recent.editToken ? `/p/${recent.id}?k=${recent.editToken}` : `/p/${recent.id}`}>
+                    {recent.title || 'Untitled project'}
+                  </a>
+                  <span className="home-page__recent-date">
+                    Opened {formatUKDate(recent.lastOpened.slice(0, 10))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </main>
+    </div>
   )
 }
 

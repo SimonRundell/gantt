@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ZOOM_LEVELS } from '../lib/timelineScale.js'
+import Icon from './Icon.jsx'
 
 /**
  * The editor's top toolbar: the project title, undo/redo, task
@@ -66,104 +68,138 @@ function Toolbar({
   const [draftTitle, setDraftTitle] = useState(title)
 
   return (
-    <div className="toolbar">
-      <input
-        className="toolbar__title"
-        value={draftTitle}
-        aria-label="Project title"
-        readOnly={readOnly}
-        onChange={(event) => setDraftTitle(event.target.value)}
-        onBlur={() => {
-          if (readOnly) return
-          if (draftTitle.trim() !== '' && draftTitle !== title) onTitleChange(draftTitle.trim())
-          else setDraftTitle(title)
-        }}
-      />
+    <header className="toolbar">
+      <div className="toolbar__top">
+        <Link className="toolbar__home" to="/" aria-label="Gantt Chart Planner home">
+          <Icon name="calendar" />
+        </Link>
+        <input
+          className="toolbar__title"
+          value={draftTitle}
+          aria-label="Project title"
+          readOnly={readOnly}
+          onChange={(event) => setDraftTitle(event.target.value)}
+          onBlur={() => {
+            if (readOnly) return
+            if (draftTitle.trim() !== '' && draftTitle !== title) onTitleChange(draftTitle.trim())
+            else setDraftTitle(title)
+          }}
+        />
 
-      <span className="toolbar__save-status" role="status">
-        {readOnly ? 'View only' : saveStatus}
-      </span>
+        <span
+          className={`toolbar__save-status${readOnly ? ' toolbar__save-status--readonly' : ''}`}
+          role="status"
+        >
+          {readOnly ? 'View only' : saveStatus}
+        </span>
 
-      <div className="toolbar__group" role="group" aria-label="Edit history">
-        <button type="button" onClick={onUndo} disabled={!canUndo} aria-label="Undo">
-          Undo
-        </button>
-        <button type="button" onClick={onRedo} disabled={!canRedo} aria-label="Redo">
-          Redo
-        </button>
+        <div className="toolbar__group toolbar__group--end" role="group" aria-label="Save and share">
+          <button type="button" className="btn btn--on-dark" onClick={onDownload}>
+            <Icon name="download" />
+            Download
+          </button>
+          <button type="button" className="btn btn--on-dark" onClick={onUploadClick} disabled={readOnly}>
+            <Icon name="upload" />
+            Upload
+          </button>
+          <button type="button" className="btn btn--on-dark" onClick={onExport}>
+            <Icon name="image" />
+            Export
+          </button>
+          <button type="button" className="btn btn--on-dark" onClick={onPrint}>
+            <Icon name="print" />
+            Print
+          </button>
+          <button type="button" className="btn btn--accent" onClick={onShare}>
+            <Icon name="share" />
+            Share
+          </button>
+          <button
+            type="button"
+            className="btn btn--on-dark btn--icon"
+            onClick={onShowShortcuts}
+            aria-label="Keyboard shortcuts"
+          >
+            <Icon name="help" />
+          </button>
+        </div>
       </div>
 
-      <div className="toolbar__group" role="group" aria-label="Add">
-        <button type="button" onClick={() => onAddTask('task')} disabled={readOnly}>
-          Add task
-        </button>
-        <button type="button" onClick={() => onAddTask('milestone')} disabled={readOnly}>
-          Add milestone
-        </button>
-        <button type="button" onClick={() => onAddTask('group')} disabled={readOnly}>
-          Add group
-        </button>
+      <div className="toolbar__tools">
+        <div className="toolbar__group" role="group" aria-label="Edit history">
+          <button type="button" className="btn btn--ghost" onClick={onUndo} disabled={!canUndo} aria-label="Undo">
+            <Icon name="undo" />
+            Undo
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onRedo} disabled={!canRedo} aria-label="Redo">
+            <Icon name="redo" />
+            Redo
+          </button>
+        </div>
+
+        <div className="toolbar__group" role="group" aria-label="Add">
+          <button type="button" className="btn btn--primary" onClick={() => onAddTask('task')} disabled={readOnly}>
+            <Icon name="plus" />
+            Add task
+          </button>
+          <button type="button" className="btn" onClick={() => onAddTask('milestone')} disabled={readOnly}>
+            <Icon name="milestone" />
+            Add milestone
+          </button>
+          <button type="button" className="btn" onClick={() => onAddTask('group')} disabled={readOnly}>
+            <Icon name="group" />
+            Add group
+          </button>
+        </div>
+
+        <div className="toolbar__group" role="group" aria-label="Task structure">
+          <button type="button" className="btn btn--ghost" onClick={onOutdent} disabled={!hasSelection} aria-label="Outdent task">
+            <Icon name="outdent" />
+            Outdent
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onIndent} disabled={!hasSelection} aria-label="Indent task">
+            <Icon name="indent" />
+            Indent
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onMoveUp} disabled={!hasSelection} aria-label="Move task up">
+            <Icon name="up" />
+            Up
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onMoveDown} disabled={!hasSelection} aria-label="Move task down">
+            <Icon name="down" />
+            Down
+          </button>
+          <button type="button" className="btn btn--danger" onClick={onDeleteTask} disabled={!hasSelection} aria-label="Delete task">
+            <Icon name="trash" />
+            Delete
+          </button>
+        </div>
+
+        <div className="toolbar__group toolbar__group--end">
+          <label className="toolbar__zoom">
+            Zoom
+            <select value={zoom} onChange={(event) => onZoomChange(event.target.value)}>
+              {Object.entries(ZOOM_LEVELS).map(([value, { label }]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <button type="button" className="btn" onClick={onGoToToday}>
+            <Icon name="today" />
+            Go to today
+          </button>
+
+          <label className="toolbar__checkbox">
+            <input type="checkbox" checked={showCriticalPath} onChange={onToggleCriticalPath} />
+            <Icon name="route" />
+            Critical path
+          </label>
+        </div>
       </div>
-
-      <div className="toolbar__group" role="group" aria-label="Task structure">
-        <button type="button" onClick={onOutdent} disabled={!hasSelection} aria-label="Outdent task">
-          ⇤ Outdent
-        </button>
-        <button type="button" onClick={onIndent} disabled={!hasSelection} aria-label="Indent task">
-          ⇥ Indent
-        </button>
-        <button type="button" onClick={onMoveUp} disabled={!hasSelection} aria-label="Move task up">
-          ↑ Up
-        </button>
-        <button type="button" onClick={onMoveDown} disabled={!hasSelection} aria-label="Move task down">
-          ↓ Down
-        </button>
-        <button type="button" onClick={onDeleteTask} disabled={!hasSelection} aria-label="Delete task">
-          Delete
-        </button>
-      </div>
-
-      <label className="toolbar__zoom">
-        Zoom
-        <select value={zoom} onChange={(event) => onZoomChange(event.target.value)}>
-          {Object.entries(ZOOM_LEVELS).map(([value, { label }]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <button type="button" onClick={onGoToToday}>
-        Go to today
-      </button>
-
-      <label className="toolbar__checkbox">
-        <input type="checkbox" checked={showCriticalPath} onChange={onToggleCriticalPath} />
-        Critical path
-      </label>
-
-      <div className="toolbar__group" role="group" aria-label="Save and share">
-        <button type="button" onClick={onDownload}>
-          Download
-        </button>
-        <button type="button" onClick={onUploadClick} disabled={readOnly}>
-          Upload
-        </button>
-        <button type="button" onClick={onShare}>
-          Share
-        </button>
-        <button type="button" onClick={onExport}>
-          Export
-        </button>
-        <button type="button" onClick={onPrint}>
-          Print
-        </button>
-        <button type="button" onClick={onShowShortcuts} aria-label="Keyboard shortcuts">
-          ?
-        </button>
-      </div>
-    </div>
+    </header>
   )
 }
 
