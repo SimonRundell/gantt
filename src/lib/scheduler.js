@@ -139,6 +139,7 @@ export function applyDependencies(project, changedTaskIds) {
 
   const queue = []
   const queued = new Set()
+  /** Adds a task id to the work queue unless it is already waiting. */
   const enqueue = (id) => {
     if (!queued.has(id)) {
       queued.add(id)
@@ -199,6 +200,7 @@ export function detectCycle(dependencies) {
   const onStack = new Set()
   const stack = []
 
+  /** Depth-first walk that records the path so a cycle can be reported. */
   const visit = (node) => {
     visited.add(node)
     onStack.add(node)
@@ -262,6 +264,7 @@ export function rollUpGroups(tasks, calendar) {
 
   const resolved = new Map()
 
+  /** Works out a task's start and duration, rolling groups up from their children. */
   const resolve = (id) => {
     if (resolved.has(id)) return resolved.get(id)
 

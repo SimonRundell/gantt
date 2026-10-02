@@ -128,7 +128,11 @@ function TaskRow({
       tabIndex={0}
       onClick={() => onSelect(task.id)}
       onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
+        if (event.target !== event.currentTarget) return
+        if (event.key === 'F2' || (event.key === 'Enter' && selected)) {
+          event.preventDefault()
+          if (!readOnly) setEditingName(true)
+        } else if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
           onSelect(task.id)
         }
@@ -163,6 +167,7 @@ function TaskRow({
             autoFocus
             defaultValue={task.name}
             aria-label="Task name"
+            onFocus={(event) => event.target.select()}
             onClick={(event) => event.stopPropagation()}
             onBlur={(event) => {
               const value = event.target.value.trim()

@@ -156,6 +156,7 @@ function Timeline({
     scrollRef.current.scrollTop = panState.current.scrollTop - dy
   }
 
+  /** Ends a background pan gesture when the pointer is released. */
   function handleBackgroundPointerUp() {
     panState.current = null
   }

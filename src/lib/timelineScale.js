@@ -155,7 +155,9 @@ export function buildHeaderTiers(zoom, startISO, endISO, weekStartsOn) {
   const minorTicks = []
   const majorTicks = []
 
+  /** Pixel width of the span between two ISO dates. */
   const tickWidth = (fromISO, toISO) => calendarDaysBetween(fromISO, toISO) * pxPerDay
+  /** Pixel x position of an ISO date on the timeline. */
   const x = (iso) => dateToX(iso, startISO, pxPerDay)
 
   if (zoom === 'day' || zoom === 'week') {

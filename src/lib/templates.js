@@ -90,6 +90,7 @@ export function createEmployerSetProjectTemplate() {
     submission, t14, t15, m3,
   ]
 
+  /** Builds a finish-to-start dependency between two task ids. */
   const fs = (from, to, lagDays = 0) => ({ id: generateId('d'), from, to, type: 'FS', lagDays })
 
   project.dependencies = [
@@ -123,6 +124,7 @@ export function createWebSprintTemplate() {
 
   project.tasks = [sprint, t1, t2, t3, t4, t5, review]
 
+  /** Builds a finish-to-start dependency between two task ids. */
   const fs = (from, to) => ({ id: generateId('d'), from, to, type: 'FS', lagDays: 0 })
   project.dependencies = [
     fs(t1.id, t2.id),

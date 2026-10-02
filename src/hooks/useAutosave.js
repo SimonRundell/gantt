@@ -31,7 +31,7 @@ function saveableContent(project) {
  * @param {boolean} options.canEdit - whether this chart was opened with a valid edit token
  * @param {object} options.project - the current project document
  * @param {(action: {type: string, [key: string]: unknown}) => void} options.rawDispatch - the reducer's dispatch, bypassing the read-only guard (autosave is not a user edit)
- * @returns {{saveStatus: string, setSaveStatus: Function, conflict: object|null, setConflict: Function, save: () => Promise<void>, markSaved: (content: object) => void}} autosave state and controls
+ * @returns {{saveStatus: string, setSaveStatus: Function, conflict: object|null, setConflict: Function, save: (revisionOverride?: number) => Promise<void>, markSaved: (content: object) => void}} autosave state and controls
  */
 export function useAutosave({ projectId, editToken, canEdit, project, rawDispatch }) {
   const [saveStatus, setSaveStatus] = useState(canEdit ? 'Saved' : 'View only')
@@ -57,12 +57,17 @@ export function useAutosave({ projectId, editToken, canEdit, project, rawDispatc
     lastSavedContentRef.current = JSON.stringify(content)
   }, [])
 
-  const save = useCallback(async () => {
+  /**
+   * Saves the current content to the server.
+   * @param {number} [revisionOverride] - revision to save against instead of the one in state, used when resolving a conflict before state has caught up
+   * @returns {Promise<void>}
+   */
+  const save = useCallback(async (revisionOverride) => {
     if (!canEdit || !editToken || projectId == null) return
     const content = saveableContent(project)
     setSaveStatus('Saving…')
     try {
-      const result = await saveProject(projectId, editToken, { revision: project.revision, ...content })
+      const result = await saveProject(projectId, editToken, { revision: typeof revisionOverride === 'number' ? revisionOverride : project.revision, ...content })
       rawDispatch({ type: 'SET_SERVER_META', fields: { revision: result.revision, updatedAt: result.updatedAt } })
       markSaved(content)
       setSaveStatus('Saved')
@@ -86,7 +91,7 @@ export function useAutosave({ projectId, editToken, canEdit, project, rawDispatc
     if (current === lastSavedContentRef.current || !canEdit || conflict) return undefined
 
     setSaveStatus('Unsaved changes')
-    const timer = setTimeout(save, AUTOSAVE_DELAY_MS)
+    const timer = setTimeout(() => save(), AUTOSAVE_DELAY_MS)
     return () => clearTimeout(timer)
     // Only the undoable content and the calendar/title/view are worth
     // autosaving on; re-running this effect on every render would

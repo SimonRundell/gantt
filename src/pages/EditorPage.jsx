@@ -40,16 +40,18 @@ function EditorPage() {
   const [searchParams] = useSearchParams()
   const location = useLocation()
   const tokenFromUrl = searchParams.get('k')
-  const sampleMode = searchParams.get('sample') === 'large'
+  const sampleSize = searchParams.get('sample')
+  const sampleMode = sampleSize === 'large' || sampleSize === 'huge'
 
   const [load, setLoad] = useState({ status: 'loading', project: null, editToken: null, canEdit: false, error: null })
 
   useEffect(() => {
     let cancelled = false
 
+    /** Loads the project from the server, or builds the sample project in sample mode. */
     async function run() {
       if (sampleMode) {
-        const project = createPerformanceSampleProject(12, 10)
+        const project = (sampleSize === 'huge' ? createPerformanceSampleProject(40, 12) : createPerformanceSampleProject(12, 10))
         if (!cancelled) setLoad({ status: 'ready', project, editToken: null, canEdit: true, error: null })
         return
       }
@@ -74,7 +76,7 @@ function EditorPage() {
     return () => {
       cancelled = true
     }
-  }, [id, tokenFromUrl, sampleMode])
+  }, [id, tokenFromUrl, sampleMode, sampleSize])
 
   if (load.status === 'loading') {
     return (
@@ -234,6 +236,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [dispatch, selection.taskId])
 
+  /** Starts resizing the table pane when the splitter is grabbed. */
   const handleSplitterPointerDown = (event) => {
     const startX = event.clientX
     const startWidth = tableWidth
@@ -249,6 +252,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
       setTableWidth(Math.min(MAX_TABLE_WIDTH, Math.max(MIN_TABLE_WIDTH, next)))
     }
 
+    /** Stops resizing the table pane when the pointer is released. */
     function handleUp() {
       window.removeEventListener('pointermove', handleMove)
       window.removeEventListener('pointerup', handleUp)
@@ -497,7 +501,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
           onKeepMine={async () => {
             rawDispatch({ type: 'SET_SERVER_META', fields: { revision: conflict.revision } })
             setConflict(null)
-            await save()
+            await save(conflict.revision)
           }}
         />
       )}

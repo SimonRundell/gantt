@@ -6,6 +6,7 @@ const SHORTCUTS = [
   { keys: 'Ctrl+Y or Ctrl+Shift+Z', description: 'Redo' },
   { keys: 'Delete or Backspace', description: 'Delete the selected task' },
   { keys: 'Enter or Space', description: 'Select the focused task row' },
+  { keys: 'F2, or Enter on a selected row', description: 'Rename the selected task' },
   { keys: 'Tab / Shift+Tab', description: 'Move focus between controls' },
   { keys: 'Esc', description: 'Close the open dialog' },
   { keys: 'Ctrl + scroll wheel', description: 'Zoom the timeline in or out' },

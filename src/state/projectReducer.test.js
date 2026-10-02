@@ -174,6 +174,35 @@ describe('undo and redo', () => {
     expect(state.history.past).toHaveLength(0)
   })
 
+  it('undoes and redoes a mix of drag, resize, edit, indent and delete step by step', () => {
+    const slice = (st) => JSON.stringify({ t: st.project.tasks, d: st.project.dependencies })
+    const steps = [
+      (st) => projectReducer(projectReducer(projectReducer(st, { type: 'BEGIN_DRAG' }), { type: 'DRAG_PREVIEW', taskId: 'a', fields: { start: '2026-10-07' } }), { type: 'END_DRAG' }),
+      (st) => projectReducer(projectReducer(projectReducer(st, { type: 'BEGIN_DRAG' }), { type: 'DRAG_PREVIEW', taskId: 'a', fields: { durationDays: 4 } }), { type: 'END_DRAG' }),
+      (st) => projectReducer(st, { type: 'RENAME_TASK', taskId: 'b', name: 'Renamed' }),
+      (st) => projectReducer(st, { type: 'INDENT_TASK', taskId: 'b' }),
+      (st) => projectReducer(st, { type: 'DELETE_TASK', taskId: 'a' }),
+    ]
+
+    const snapshots = []
+    let state = twoTaskState()
+    for (const step of steps) {
+      snapshots.push(slice(state))
+      state = step(state)
+    }
+    const finalSlice = slice(state)
+    expect(state.history.past).toHaveLength(steps.length)
+
+    for (let i = steps.length - 1; i >= 0; i--) {
+      state = projectReducer(state, { type: 'UNDO' })
+      expect(slice(state)).toBe(snapshots[i])
+    }
+    for (let i = 0; i < steps.length; i++) {
+      state = projectReducer(state, { type: 'REDO' })
+    }
+    expect(slice(state)).toBe(finalSlice)
+  })
+
   it('trims history to the maximum undo depth', () => {
     let state = twoTaskState()
     for (let i = 0; i < 150; i++) {

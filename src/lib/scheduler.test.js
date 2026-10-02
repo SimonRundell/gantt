@@ -179,6 +179,37 @@ describe('applyDependencies', () => {
     expect(result.tasks.find((t) => t.id === 'c').start).toBe('2026-10-07')
   })
 
+  it('reschedules FS, SS, FF and SF successors correctly across a weekend and a holiday block', () => {
+    const calendar = {
+      ...DEFAULT_CALENDAR,
+      nonWorkingDates: ['2026-12-21', '2026-12-22', '2026-12-23', '2026-12-24', '2026-12-25'],
+    }
+    const pred = makeTask({ id: 'a', start: '2026-12-17', durationDays: 2 }) // Thu-Fri, ends 2026-12-18
+    const make = (id) => makeTask({ id, start: '2026-12-01', durationDays: 3 })
+    const project = {
+      calendar,
+      tasks: [pred, make('fs'), make('ss'), make('ff'), make('sf')],
+      dependencies: [
+        { id: 'd1', from: 'a', to: 'fs', type: 'FS', lagDays: 0 },
+        { id: 'd2', from: 'a', to: 'ss', type: 'SS', lagDays: 2 },
+        { id: 'd3', from: 'a', to: 'ff', type: 'FF', lagDays: 3 },
+        { id: 'd4', from: 'a', to: 'sf', type: 'SF', lagDays: 3 },
+      ],
+    }
+
+    const result = applyDependencies(project, ['a'])
+    const get = (id) => result.tasks.find((t) => t.id === id)
+
+    // FS: next working day after Fri 18th, past the weekend and the holiday week.
+    expect(get('fs').start).toBe('2026-12-28')
+    // SS: two working days after the 17th (18th, then 28th).
+    expect(get('ss').start).toBe('2026-12-28')
+    // FF: finishes three working days after the 18th (28th, 29th, 30th).
+    expect(computeEnd(get('ff'), calendar)).toBe('2026-12-30')
+    // SF: finishes three working days after the 17th (18th, 28th, 29th).
+    expect(computeEnd(get('sf'), calendar)).toBe('2026-12-29')
+  })
+
   it('moves a successor across a configured holiday block', () => {
     const calendar = {
       ...DEFAULT_CALENDAR,

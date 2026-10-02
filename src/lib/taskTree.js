@@ -39,6 +39,7 @@ export function flattenVisibleRows(tasks) {
   const childrenMap = buildChildrenMap(tasks)
   const rows = []
 
+  /** Appends a task and then its children to the flattened row list. */
   const visit = (id, depth) => {
     const task = byId.get(id)
     if (!task) return
@@ -64,6 +65,7 @@ export function renumberOrder(tasks) {
   const childrenMap = buildChildrenMap(tasks)
   let counter = 0
 
+  /** Visits a task and its descendants in order. */
   const visit = (id) => {
     const task = byId.get(id)
     task.order = counter++
@@ -85,6 +87,7 @@ export function collectSubtreeIds(tasks, taskId) {
   const childrenMap = buildChildrenMap(tasks)
   const result = []
 
+  /** Visits a task and its descendants in order. */
   const visit = (id) => {
     result.push(id)
     for (const childId of childrenMap.get(id) ?? []) visit(childId)

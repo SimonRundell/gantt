@@ -1,5 +1,13 @@
 RewriteEngine On
 
+# Apache does not pass the Authorization header to PHP by default, which
+# the API needs for edit tokens. Hand it through as an environment variable.
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Never serve hidden files or folders such as .git or .config.json.
+RewriteRule (^|/)\.(?!well-known) - [F,L]
+
 # Let real files/directories (including /api/*) resolve normally.
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
