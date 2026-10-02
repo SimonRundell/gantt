@@ -1608,3 +1608,51 @@ fieldset.dialog__field label {
   color: var(--gc-text-muted);
   font-size: 0.9rem;
 }
+
+/* ---------------------------------------------------------------- */
+/* Drag to reorder rows                                               */
+/* ---------------------------------------------------------------- */
+
+.task-row__grip,
+.task-table__header-grip {
+  flex-shrink: 0;
+  width: 16px;
+}
+
+.task-row__grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gc-text-muted);
+  font-size: 0.7rem;
+  letter-spacing: -0.15em;
+  cursor: grab;
+  opacity: 0.35;
+  user-select: none;
+}
+
+.task-row:hover .task-row__grip,
+.task-row--selected .task-row__grip {
+  opacity: 1;
+}
+
+.task-row__grip:active {
+  cursor: grabbing;
+}
+
+.task-row--dragging {
+  opacity: 0.45;
+}
+
+.task-row--drop-before {
+  box-shadow: inset 0 3px 0 var(--gc-primary);
+}
+
+.task-row--drop-after {
+  box-shadow: inset 0 -3px 0 var(--gc-primary);
+}
+
+.task-row--drop-inside {
+  background: color-mix(in srgb, var(--gc-primary) 18%, var(--gc-bg));
+  box-shadow: inset 0 0 0 2px var(--gc-primary);
+}

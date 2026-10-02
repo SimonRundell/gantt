@@ -131,3 +131,9 @@
 - Zoom is no longer limited to four steps: it is a free pixels-per-day value (0.5 to 80), saved with the chart as `view.pxPerDay`. The header (day, week, month or quarter ticks) switches automatically to suit. Choosing a preset from the Zoom list clears the free zoom; the list shows "Custom" while one is active. Exports use the same zoom.
 - Shift + wheel scrolls sideways, and Alt + wheel scrolls up and down the rows (the task table's own wheel still scrolls rows).
 - Fixed Ctrl + wheel not suppressing the browser's page zoom: React's wheel handlers are passive, so the timeline now uses a native non-passive listener.
+
+## Drag to reorder rows
+
+- Each row in the task table has a drag handle. Drag it over another row: the top quarter drops before it, the bottom quarter drops after it (at that row's level), and the middle of a group drops inside it (at the end, expanding the group). A blue line or box shows where it will land.
+- Groups move with all their children. A task cannot be dropped inside itself or its own children, and a drop that would leave things where they are does nothing and adds no undo step. One drop is one undo step.
+- New `MOVE_TASK` action and `dropPositionFromOffset` helper, both tested. View-only charts show no handles. The Up and Down buttons remain for keyboard users.

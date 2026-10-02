@@ -10,6 +10,7 @@ A free, login-free Gantt chart tool for planning coursework and group projects. 
 - Four dependency types (finish-to-start, start-to-start, finish-to-finish, start-to-finish) with lag, created by dragging between bars. Circular dependencies are refused with a plain English message.
 - Automatic scheduling around a working calendar: choose working days and add holidays or closures (single days or ranges, plus built-in England bank holidays for 2026 and 2027) in the Calendar dialog.
 - Critical path highlighting.
+- Drag rows by the handle on the left to reorder them, or drop onto a group to move them inside it (the Up and Down buttons still work for keyboard use).
 - Task details panel: edit name, type, start, duration, percent complete, assignee, colour and notes, and duplicate a task or whole group. Start, duration and percent can also be edited straight in the table.
 - Baseline: save the plan as a baseline, see it as a grey bar under each task, and read the variance in days.
 - Column chooser (including predecessors, notes and variance) and an option to show assignees on the bars.

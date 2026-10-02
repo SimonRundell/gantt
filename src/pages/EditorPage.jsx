@@ -415,6 +415,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
             }
             onColourChange={(taskId, colour) => dispatch({ type: 'UPDATE_TASK_FIELDS', taskId, fields: { colour } })}
             onFieldChange={(taskId, fields) => dispatch({ type: 'UPDATE_TASK_FIELDS', taskId, fields })}
+            onMoveTask={(taskId, targetId, position) => dispatch({ type: 'MOVE_TASK', taskId, targetId, position })}
             scrollTop={scrollTop}
             onScroll={handleScroll}
           />

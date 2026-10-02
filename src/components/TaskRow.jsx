@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { TASK_COLOURS } from '../lib/constants.js'
 import { formatUKDate } from '../lib/dates.js'
 import { computeEnd } from '../lib/scheduler.js'
@@ -26,6 +26,12 @@ import EditableCell from './EditableCell.jsx'
  * @param {(taskId: string, colour: string) => void} props.onColourChange - called when the colour swatch is clicked, cycling to the next colour
  * @param {(taskId: string, fields: object) => void} props.onFieldChange - called when the start, duration or percent is edited and committed
  * @param {boolean} [props.readOnly] - when true, the name, assignee and colour are not editable
+ * @param {'before'|'after'|'inside'|null} [props.dropPosition] - where a row being dragged would land relative to this one, for the drop indicator
+ * @param {boolean} [props.dragging] - whether this row is the one being dragged
+ * @param {(event: import('react').DragEvent, task: import('../lib/scheduler.js').Task, row: HTMLElement) => void} [props.onGripDragStart] - called when the drag handle is picked up; the handle is only shown when this is given
+ * @param {(event: import('react').DragEvent, task: import('../lib/scheduler.js').Task) => void} [props.onRowDragOver] - called as a dragged row moves over this one
+ * @param {(event: import('react').DragEvent, task: import('../lib/scheduler.js').Task) => void} [props.onRowDrop] - called when a dragged row is dropped on this one
+ * @param {() => void} [props.onGripDragEnd] - called when a drag finishes or is cancelled
  * @returns {JSX.Element} the table row
  */
 function TaskRow({
@@ -44,10 +50,17 @@ function TaskRow({
   onColourChange,
   onFieldChange,
   readOnly,
+  dropPosition,
+  dragging,
+  onGripDragStart,
+  onRowDragOver,
+  onRowDrop,
+  onGripDragEnd,
 }) {
   const end = computeEnd(task, calendar)
   const varianceLabel = formatVariance(baselineVarianceDays(task, calendar))
   const [editingName, setEditingName] = useState(false)
+  const rowRef = useRef(null)
 
   /**
    * Applies a value typed into the start, duration or percent cell,
@@ -157,11 +170,16 @@ function TaskRow({
 
   return (
     <div
-      className={`task-row${selected ? ' task-row--selected' : ''} task-row--${task.type}`}
+      ref={rowRef}
+      className={`task-row${selected ? ' task-row--selected' : ''} task-row--${task.type}${
+        dragging ? ' task-row--dragging' : ''
+      }${dropPosition ? ` task-row--drop-${dropPosition}` : ''}`}
       role="row"
       aria-selected={selected}
       tabIndex={0}
       onClick={() => onSelect(task.id)}
+      onDragOver={onRowDragOver ? (event) => onRowDragOver(event, task) : undefined}
+      onDrop={onRowDrop ? (event) => onRowDrop(event, task) : undefined}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return
         if (event.key === 'F2' || (event.key === 'Enter' && selected)) {
@@ -173,6 +191,18 @@ function TaskRow({
         }
       }}
     >
+      {onGripDragStart && (
+        <span
+          className="task-row__grip"
+          draggable
+          title="Drag to reorder"
+          aria-hidden="true"
+          onDragStart={(event) => onGripDragStart(event, task, rowRef.current)}
+          onDragEnd={onGripDragEnd}
+        >
+          &#8942;&#8942;
+        </span>
+      )}
       <div className="task-row__cell task-row__cell--name" style={{ paddingLeft: `${depth * 18 + 8}px` }}>
         {hasChildren ? (
           <button
