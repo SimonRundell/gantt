@@ -88,3 +88,9 @@ A running log of choices made while building the Gantt chart planner, kept so la
 - **A plain wheel over the timeline zooms**, as requested, rather than needing Ctrl. The cost is that the wheel no longer scrolls the rows when the pointer is over the timeline. Rows still scroll with the wheel over the task table, with the scrollbar, or with Alt + wheel over the timeline. Shift + wheel (and sideways trackpad swipes) scroll along the dates.
 - **Zoom is continuous**, stored as `view.pxPerDay`, with `view.zoom` following to the nearest preset name so older code, the schema and the Zoom list stay meaningful.
 - **The zoom is saved with the chart**, like the preset was, so it comes back as you left it and is picked up by exports. It also triggers an autosave after the usual delay.
+
+## Drag to reorder
+
+- **Dragging uses a handle, not the whole row**, so clicking, double-clicking and typing into cells keep working. It uses the browser's built-in drag and drop, which also scrolls the table when you drag near its edge.
+- **Dropping on an ordinary task means before or after it.** Only groups accept "inside", because only groups can have children. Indenting under a plain task is still done with the Indent button.
+- **Keyboard users keep Up, Down, Indent and Outdent** as the way to reorder; the handle is mouse only.

@@ -197,6 +197,97 @@ describe('zoom', () => {
   })
 })
 
+describe('MOVE_TASK', () => {
+  /**
+   * Builds a state with a group (g) holding two children (c1, c2) followed by two top-level tasks (a, b).
+   * @returns {object} the reducer state
+   */
+  function treeState() {
+    const base = twoTaskState()
+    const make = (id, name, parentId, order, type = 'task') => ({
+      ...base.project.tasks[0],
+      id,
+      name,
+      parentId,
+      order,
+      type,
+    })
+    const project = {
+      ...base.project,
+      tasks: [
+        make('g', 'Group', null, 0, 'group'),
+        make('c1', 'Child 1', 'g', 1),
+        make('c2', 'Child 2', 'g', 2),
+        make('a', 'A', null, 3),
+        make('b', 'B', null, 4),
+      ],
+    }
+    return createInitialState(project)
+  }
+
+  /**
+   * Lists task ids in display order with their parents, for readable assertions.
+   * @param {object} state - the reducer state
+   * @returns {string[]} entries like "g>c1" (parent>child) or "a" for top-level tasks
+   */
+  function layout(state) {
+    return [...state.project.tasks]
+      .sort((x, y) => x.order - y.order)
+      .map((t) => (t.parentId ? `${t.parentId}>${t.id}` : t.id))
+  }
+
+  it('moves a task before another at the same level', () => {
+    const next = projectReducer(treeState(), { type: 'MOVE_TASK', taskId: 'b', targetId: 'a', position: 'before' })
+    expect(layout(next)).toEqual(['g', 'g>c1', 'g>c2', 'b', 'a'])
+    expect(next.history.past).toHaveLength(1)
+  })
+
+  it('moves a task after another', () => {
+    const next = projectReducer(treeState(), { type: 'MOVE_TASK', taskId: 'a', targetId: 'b', position: 'after' })
+    expect(layout(next)).toEqual(['g', 'g>c1', 'g>c2', 'b', 'a'])
+  })
+
+  it('moves a whole group, children and all, after another task', () => {
+    const next = projectReducer(treeState(), { type: 'MOVE_TASK', taskId: 'g', targetId: 'a', position: 'after' })
+    expect(layout(next)).toEqual(['a', 'g', 'g>c1', 'g>c2', 'b'])
+  })
+
+  it('moves a task inside a group, at the end, and expands the group', () => {
+    const state = treeState()
+    state.project.tasks = state.project.tasks.map((t) => (t.id === 'g' ? { ...t, collapsed: true } : t))
+    const next = projectReducer(state, { type: 'MOVE_TASK', taskId: 'a', targetId: 'g', position: 'inside' })
+    expect(layout(next)).toEqual(['g', 'g>c1', 'g>c2', 'g>a', 'b'])
+    expect(next.project.tasks.find((t) => t.id === 'g').collapsed).toBe(false)
+  })
+
+  it('moves a child out of its group by dropping it after a top-level task', () => {
+    const next = projectReducer(treeState(), { type: 'MOVE_TASK', taskId: 'c1', targetId: 'a', position: 'after' })
+    expect(layout(next)).toEqual(['g', 'g>c2', 'a', 'c1', 'b'])
+  })
+
+  it('treats "inside" a plain task as "after"', () => {
+    const next = projectReducer(treeState(), { type: 'MOVE_TASK', taskId: 'b', targetId: 'a', position: 'inside' })
+    expect(layout(next)).toEqual(['g', 'g>c1', 'g>c2', 'a', 'b'])
+  })
+
+  it('refuses to drop a group into itself or its own children', () => {
+    const state = treeState()
+    expect(projectReducer(state, { type: 'MOVE_TASK', taskId: 'g', targetId: 'c1', position: 'after' })).toBe(state)
+    expect(projectReducer(state, { type: 'MOVE_TASK', taskId: 'g', targetId: 'g', position: 'inside' })).toBe(state)
+  })
+
+  it('does nothing, and adds no undo step, when the task would stay where it is', () => {
+    const state = treeState()
+    expect(projectReducer(state, { type: 'MOVE_TASK', taskId: 'a', targetId: 'b', position: 'before' })).toBe(state)
+  })
+
+  it('can be undone', () => {
+    const state = treeState()
+    const next = projectReducer(state, { type: 'MOVE_TASK', taskId: 'b', targetId: 'a', position: 'before' })
+    expect(layout(projectReducer(next, { type: 'UNDO' }))).toEqual(layout(state))
+  })
+})
+
 describe('SET_CALENDAR', () => {
   it('moves tasks that start on a new holiday to the next working day, and can be undone', () => {
     const state = twoTaskState() // both tasks start Mon 2026-10-05

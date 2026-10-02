@@ -245,6 +245,53 @@ export function projectReducer(state, action) {
       return { ...state, history, project: { ...state.project, tasks } }
     }
 
+    case 'MOVE_TASK': {
+      const { taskId, targetId, position } = action
+      const task = state.project.tasks.find((t) => t.id === taskId)
+      const target = state.project.tasks.find((t) => t.id === targetId)
+      if (!task || !target || taskId === targetId) return state
+
+      // A task cannot be dropped inside itself or any of its own children.
+      const ownSubtree = new Set(collectSubtreeIds(state.project.tasks, taskId))
+      if (ownSubtree.has(targetId)) return state
+
+      // "Inside" only makes sense for a group; anywhere else it means "after".
+      const placement = position === 'inside' && target.type !== 'group' ? 'after' : position
+
+      let parentId
+      let order
+      if (placement === 'inside') {
+        parentId = target.id
+        order = state.project.tasks.length + 1 // the end of the group's children
+      } else if (placement === 'before') {
+        parentId = target.parentId ?? null
+        order = target.order - 0.5
+      } else {
+        parentId = target.parentId ?? null
+        const targetSubtree = collectSubtreeIds(state.project.tasks, targetId)
+        const lastOrder = Math.max(...state.project.tasks.filter((t) => targetSubtree.includes(t.id)).map((t) => t.order))
+        order = lastOrder + 0.5
+      }
+
+      const moved = renumberOrder(
+        state.project.tasks.map((t) => {
+          if (t.id === taskId) return { ...t, parentId, order }
+          if (placement === 'inside' && t.id === target.id) return { ...t, collapsed: false }
+          return t
+        }),
+      )
+
+      const unchanged = moved.every((t, i) => {
+        const before = state.project.tasks[i]
+        return t.parentId === before.parentId && t.order === before.order
+      })
+      if (unchanged) return state
+
+      const history = pushHistory(state)
+      const project = reschedule({ ...state.project, tasks: moved }, [])
+      return { ...state, history, project }
+    }
+
     case 'INDENT_TASK': {
       const task = state.project.tasks.find((t) => t.id === action.taskId)
       if (!task) return state
