@@ -18,6 +18,7 @@ function PrintPage() {
   useEffect(() => {
     let cancelled = false
 
+    /** Fetches the project to print. */
     async function run() {
       try {
         const project = await getProject(id)

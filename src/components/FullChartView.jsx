@@ -11,6 +11,7 @@ import TimelineGrid from './TimelineGrid.jsx'
 import TimelineHeader from './TimelineHeader.jsx'
 import TodayLine from './TodayLine.jsx'
 
+/** Does nothing; stands in for event handlers the read-only export view never needs. */
 const noop = () => {}
 
 /**

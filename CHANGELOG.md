@@ -87,3 +87,14 @@
 - Fixed a real WCAG AA contrast failure: the yellow task colour (`#ca8a04`) only reached 2.94:1 against white, under the 3:1 minimum for non-text UI components. Darkened it to `#a16207` (4.92:1). Checked the rest of the eight-colour palette and all the app's text/background pairs by calculating contrast ratios directly; everything else already passed.
 - Added `ShortcutsDialog`, opened with `?` or from the toolbar, listing every keyboard shortcut the editor supports.
 - Checked responsive behaviour: tablet (768px) works well, with the toolbar wrapping onto a second row. Phone (375px) is cramped, since the task table's minimum width leaves little room for the timeline; left as-is since the brief marks phone viewing as a nice-to-have, not a requirement.
+
+## Acceptance testing
+
+- Fixed saves failing on Apache: the Authorization header never reached PHP, so every save, delete and edit-token check returned 403. Fixed in `.htaccess` and `api/storage.php`.
+- Fixed "Keep my version" in the conflict dialog looping forever: it re-saved with the stale revision and hit another 409. `save` now takes the server's revision explicitly.
+- Root `.htaccess` now blocks `.git` and other dotfiles (they were being served).
+- Keyboard-only rename: F2, or Enter on an already selected row. Listed in the shortcuts dialog. The rename box now selects its text on open.
+- PNG and PDF export use an adaptive pixel ratio so a 500 task chart stays within canvas limits. PDF tile mode now prints at the intended size.
+- Added JSDoc to 15 nested helper functions that lacked it.
+- New tests: undo/redo across drag, resize, edit, indent and delete; FS, SS, FF and SF across a weekend and holiday block; `safePixelRatio`. Suite is 120 tests, all passing.
+- Setup note: `.config.json` is gitignored, so a fresh checkout needs `cp .config.example.json .config.json` before `npm run build`.

@@ -11,6 +11,26 @@ const FOOTER_MM = 7
 /** @type {number} millimetres per CSS pixel at the usual 96 DPI, used for "actual size" tiling */
 const MM_PER_PX = 25.4 / 96
 
+/** @type {number} longest canvas side most browsers will draw reliably (Firefox and Safari are stricter than Chrome) */
+const MAX_CANVAS_SIDE_PX = 16000
+/** @type {number} largest canvas area (in pixels) that is safe across browsers */
+const MAX_CANVAS_AREA_PX = 100_000_000
+
+/**
+ * Picks how many image pixels to render per CSS pixel. Normally 2 for a
+ * crisp result, but reduced for very large charts so the canvas stays
+ * within browser limits and the whole chart is exported rather than a
+ * blank or truncated image.
+ * @param {HTMLElement} node - the element about to be rasterised
+ * @returns {number} the pixel ratio to use, between a small minimum and 2
+ */
+export function safePixelRatio(node) {
+  const { width, height } = node.getBoundingClientRect()
+  const bySide = MAX_CANVAS_SIDE_PX / Math.max(width, height, 1)
+  const byArea = Math.sqrt(MAX_CANVAS_AREA_PX / Math.max(width * height, 1))
+  return Math.max(0.25, Math.min(2, bySide, byArea))
+}
+
 /**
  * Loads a data URL into an Image element, so its pixel dimensions and
  * pixels can be read via canvas.
@@ -43,7 +63,7 @@ function todayStamp() {
  * @returns {Promise<void>} resolves once the download has started
  */
 export async function exportChartAsPng(node, title) {
-  const dataUrl = await toPng(node, { pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true })
+  const dataUrl = await toPng(node, { pixelRatio: safePixelRatio(node), backgroundColor: '#ffffff', cacheBust: true })
   const link = document.createElement('a')
   link.href = dataUrl
   link.download = `${slugify(title)}-${todayStamp().compact}.png`
@@ -65,7 +85,8 @@ export async function exportChartAsPng(node, title) {
  * @returns {Promise<void>} resolves once the download has started
  */
 export async function exportChartAsPdf(node, { title, pageSize, orientation, fit }) {
-  const dataUrl = await toPng(node, { pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true })
+  const pixelRatio = safePixelRatio(node)
+  const dataUrl = await toPng(node, { pixelRatio, backgroundColor: '#ffffff', cacheBust: true })
   const img = await loadImage(dataUrl)
   const pixelWidth = img.width
   const pixelHeight = img.height
@@ -76,7 +97,7 @@ export async function exportChartAsPdf(node, { title, pageSize, orientation, fit
   const contentWidthMm = pageWidthMm - MARGIN_MM * 2
   const contentHeightMm = pageHeightMm - MARGIN_MM * 2 - HEADER_MM - FOOTER_MM
 
-  const scale = fit === 'width' ? contentWidthMm / pixelWidth : MM_PER_PX
+  const scale = fit === 'width' ? contentWidthMm / pixelWidth : MM_PER_PX / pixelRatio
   const pageContentWidthPx = contentWidthMm / scale
   const pageContentHeightPx = contentHeightMm / scale
 

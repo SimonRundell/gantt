@@ -177,7 +177,19 @@ function verifyToken(array $doc, ?string $token): bool
  */
 function bearerToken(): ?string
 {
-    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    // Apache often drops the Authorization header before PHP sees it, so
+    // check the rewritten and redirected variants as well (see .htaccess).
+    $header = $_SERVER['HTTP_AUTHORIZATION']
+        ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+        ?? '';
+    if ($header === '' && function_exists('getallheaders')) {
+        foreach (getallheaders() as $name => $value) {
+            if (strcasecmp($name, 'Authorization') === 0) {
+                $header = $value;
+                break;
+            }
+        }
+    }
     if (preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
         return trim($matches[1]);
     }
