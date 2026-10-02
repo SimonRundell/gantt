@@ -17,6 +17,7 @@ export const COLUMN_LABELS = {
   assignee: 'Assignee',
   predecessors: 'Predecessors',
   notes: 'Notes',
+  variance: 'Variance',
 }
 
 /** @type {{label: string, value: string}[]} the eight named task colours offered in the editor */

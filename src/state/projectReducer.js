@@ -11,6 +11,7 @@ import { generateId } from '../lib/id.js'
 import { applyDependencies, detectCycle, removeDependenciesForTask, rollUpGroups } from '../lib/scheduler.js'
 import { collectSubtreeIds, renumberOrder } from '../lib/taskTree.js'
 import { todayISO } from '../lib/dates.js'
+import { clampPxPerDay, levelForPxPerDay } from '../lib/timelineScale.js'
 
 /** @type {number} how many undo steps to keep */
 const MAX_HISTORY = 100
@@ -121,7 +122,17 @@ export function projectReducer(state, action) {
     }
 
     case 'SET_ZOOM': {
-      return { ...state, project: { ...state.project, view: { ...state.project.view, zoom: action.zoom } } }
+      // Choosing a preset level clears any free (mouse wheel) zoom.
+      const view = { ...state.project.view, zoom: action.zoom, pxPerDay: null }
+      return { ...state, project: { ...state.project, view } }
+    }
+
+    case 'SET_SCALE': {
+      // A free zoom from the mouse wheel. `zoom` follows to the nearest
+      // header style so anything that only knows the presets stays sensible.
+      const pxPerDay = clampPxPerDay(action.pxPerDay)
+      const view = { ...state.project.view, pxPerDay, zoom: levelForPxPerDay(pxPerDay) }
+      return { ...state, project: { ...state.project, view } }
     }
 
     case 'TOGGLE_CRITICAL_PATH': {
@@ -279,6 +290,64 @@ export function projectReducer(state, action) {
       )
       const project = reschedule({ ...state.project, tasks }, [action.taskId])
       return { ...state, history, project }
+    }
+
+    case 'DUPLICATE_TASK': {
+      const original = state.project.tasks.find((t) => t.id === action.taskId)
+      if (!original) return state
+
+      const history = pushHistory(state)
+      const subtreeIds = collectSubtreeIds(state.project.tasks, original.id)
+      const idMap = new Map(subtreeIds.map((id) => [id, generateId('t')]))
+
+      const copies = state.project.tasks
+        .filter((t) => idMap.has(t.id))
+        .map((t) => {
+          const isRoot = t.id === original.id
+          return {
+            ...t,
+            id: idMap.get(t.id),
+            parentId: isRoot ? t.parentId : idMap.get(t.parentId),
+            name: isRoot ? `${t.name} (copy)` : t.name,
+            // Sit straight after the original; renumberOrder tidies this up.
+            order: isRoot ? t.order + 0.5 : t.order,
+            baseline: null,
+          }
+        })
+
+      // Dependencies wholly inside the copied subtree are copied too, so
+      // a duplicated group keeps its internal structure. Links to tasks
+      // outside it are not copied.
+      const copiedDependencies = state.project.dependencies
+        .filter((d) => idMap.has(d.from) && idMap.has(d.to))
+        .map((d) => ({ ...d, id: generateId('d'), from: idMap.get(d.from), to: idMap.get(d.to) }))
+
+      const tasks = renumberOrder([...state.project.tasks, ...copies])
+      const dependencies = [...state.project.dependencies, ...copiedDependencies]
+      const project = reschedule({ ...state.project, tasks, dependencies }, [])
+      return { ...state, history, project, selection: { taskId: idMap.get(original.id) } }
+    }
+
+    case 'SET_BASELINE': {
+      const history = pushHistory(state)
+      const tasks = state.project.tasks.map((t) => ({
+        ...t,
+        baseline: { start: t.start, durationDays: t.durationDays },
+      }))
+      const view = { ...state.project.view, showBaseline: true }
+      return { ...state, history, project: { ...state.project, tasks, view } }
+    }
+
+    case 'CLEAR_BASELINE': {
+      const history = pushHistory(state)
+      const tasks = state.project.tasks.map((t) => ({ ...t, baseline: null }))
+      const view = { ...state.project.view, showBaseline: false }
+      return { ...state, history, project: { ...state.project, tasks, view } }
+    }
+
+    case 'SET_VIEW_OPTION': {
+      const view = { ...state.project.view, [action.key]: action.value }
+      return { ...state, project: { ...state.project, view } }
     }
 
     case 'ADD_DEPENDENCY': {

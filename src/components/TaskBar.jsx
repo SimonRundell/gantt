@@ -17,14 +17,27 @@ const GROUP_TICK_HEIGHT = 10
  * @param {number} props.rowTop - the top of this task's row in pixels
  * @param {boolean} props.selected - whether this task is selected
  * @param {boolean} props.critical - whether this task is on the critical path
+ * @param {boolean} [props.showAssignee] - whether to write the assignee after the task name
  * @param {(taskId: string) => void} props.onSelect - called when the bar is clicked
  * @param {(event: import('react').PointerEvent, handle: 'move'|'resize-start'|'resize-end'|'percent', barWidth: number) => void} [props.onPointerDown] - called when a drag starts on the bar, one of its edge handles, or its percent handle
  * @param {(taskId: string, edge: 'start'|'end', event: import('react').PointerEvent) => void} [props.onConnectorPointerDown] - called when a drag starts on a connector dot, to begin creating a dependency
  * @returns {JSX.Element} the bar's SVG group
  */
-function TaskBar({ task, x, width, rowTop, selected, critical, onSelect, onPointerDown, onConnectorPointerDown }) {
+function TaskBar({
+  task,
+  x,
+  width,
+  rowTop,
+  selected,
+  critical,
+  showAssignee,
+  onSelect,
+  onPointerDown,
+  onConnectorPointerDown,
+}) {
   const barWidth = Math.max(width, 4)
-  const label = `${task.name}, ${task.percent}% complete`
+  const who = showAssignee && task.assignee ? ` (${task.assignee})` : ''
+  const label = `${task.name}${who}, ${task.percent}% complete`
 
   if (task.type === 'group') {
     const y = rowTop + (ROW_HEIGHT - GROUP_BAR_HEIGHT) / 2
@@ -41,7 +54,7 @@ function TaskBar({ task, x, width, rowTop, selected, critical, onSelect, onPoint
           className={`task-bar__group-shape task-bar__group-shape--${task.colour}`}
         />
         <text x={x + barWidth + 6} y={rowTop + ROW_HEIGHT / 2} className="task-bar__label">
-          {task.name} ({task.percent}%)
+          {task.name}{who} ({task.percent}%)
         </text>
       </g>
     )
@@ -67,9 +80,19 @@ function TaskBar({ task, x, width, rowTop, selected, critical, onSelect, onPoint
         rx={4}
         className={`task-bar__shape task-bar__shape--${task.colour}`}
       />
+      <rect
+        x={x}
+        y={y}
+        width={barWidth}
+        height={BAR_HEIGHT}
+        rx={4}
+        className="task-bar__pattern"
+        fill={`url(#bar-pattern-${task.colour})`}
+      />
       <rect x={x} y={y} width={fillWidth} height={BAR_HEIGHT} rx={4} className="task-bar__progress" />
       <text x={x + barWidth + 6} y={rowTop + ROW_HEIGHT / 2} className="task-bar__label">
         {task.name}
+        {who}
       </text>
       <rect
         x={x - 3}

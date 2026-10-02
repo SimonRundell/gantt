@@ -113,3 +113,21 @@
 - Saving a calendar now moves tasks that start on a non-working day forward to the next working day (groups still roll up from their children).
 - Added `src/lib/calendarEdit.js` with tests for the range and grouping logic.
 - Corrected `docs/TEACHER.md`, which numbered working days 1 to 7; the file format uses 0 (Sunday) to 6 (Saturday). The guide now describes the dialog instead of editing JSON.
+
+## Task details, columns, patterns, baseline, resources and snapping
+
+- Added a task details panel (toolbar **Details**): name, type (task, milestone, group), start, duration, percent, assignee, colour, notes, with a finish date shown and baseline info. Fields apply on leaving the box or pressing Enter, so typing makes one undo step. Added **Duplicate** (copies a group with its children and their internal dependencies). Group dates and percent, and milestone durations, are locked because they are worked out automatically.
+- Start, duration and percent can now be edited in the table (`EditableCell`); invalid text is ignored. Shared parsing and limits live in `src/lib/taskFields.js`.
+- Added a column chooser dialog (predecessors, notes and a new Variance column are now reachable) and a "show assignee after the task name" option for bar labels.
+- Bars now carry a per-colour pattern overlay (`PatternDefs`), so colour is never the only way to tell them apart. Also appears in PNG and PDF exports.
+- Baseline: **Baseline** dialog to save, show, hide or clear. Grey bar under each task, and the Variance column shows working days later (+) or earlier (-) at the finish. Saved with the chart and undoable.
+- Resources dialog: tasks per person (names separated by commas share a task), not-finished counts and overlapping task pairs. Groups are skipped and milestones never count as overlapping.
+- Snap option (Day or Week) for dragging bars. Week snapping moves starts to the nearest week start and finishes to the last working day of a week.
+- New view options stored with the chart: `snap`, `showAssigneeOnBars`.
+
+## Mouse wheel zoom
+
+- Rolling the mouse wheel over the timeline now zooms smoothly in and out, keeping the date under the pointer in place, so you can look at one week then back out to six weeks or a quarter. Trackpad pinch works too.
+- Zoom is no longer limited to four steps: it is a free pixels-per-day value (0.5 to 80), saved with the chart as `view.pxPerDay`. The header (day, week, month or quarter ticks) switches automatically to suit. Choosing a preset from the Zoom list clears the free zoom; the list shows "Custom" while one is active. Exports use the same zoom.
+- Shift + wheel scrolls sideways, and Alt + wheel scrolls up and down the rows (the task table's own wheel still scrolls rows).
+- Fixed Ctrl + wheel not suppressing the browser's page zoom: React's wheel handlers are passive, so the timeline now uses a native non-passive listener.

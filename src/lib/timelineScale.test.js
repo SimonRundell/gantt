@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_CALENDAR } from './calendar.js'
-import { buildHeaderTiers, computeDateRange, dateToX, pxPerDayFor, xToDate, ZOOM_LEVELS } from './timelineScale.js'
+import {
+  buildHeaderTiers,
+  clampPxPerDay,
+  computeDateRange,
+  dateToX,
+  levelForPxPerDay,
+  MAX_PX_PER_DAY,
+  MIN_PX_PER_DAY,
+  pxPerDayFor,
+  resolveScale,
+  xToDate,
+  ZOOM_LEVELS,
+  zoomAfterWheel,
+} from './timelineScale.js'
 
 describe('pxPerDayFor', () => {
   it('returns the configured pixels per day for each zoom level', () => {
@@ -77,5 +90,43 @@ describe('buildHeaderTiers', () => {
     const totalWidth = majorTicks.reduce((sum, t) => sum + t.width, 0)
     const expectedWidth = Math.round((new Date('2026-12-01') - new Date('2026-10-01')) / 86400000) * pxPerDay
     expect(totalWidth).toBe(expectedWidth)
+  })
+})
+
+describe('wheel zoom', () => {
+  it('zooms in when rolling away and out when rolling towards you', () => {
+    expect(zoomAfterWheel(12, -100)).toBeGreaterThan(12)
+    expect(zoomAfterWheel(12, 100)).toBeLessThan(12)
+  })
+
+  it('changes by roughly a fifth per ordinary notch, and less for small trackpad steps', () => {
+    const notch = zoomAfterWheel(10, -100) / 10
+    expect(notch).toBeGreaterThan(1.15)
+    expect(notch).toBeLessThan(1.3)
+    expect(zoomAfterWheel(10, -4) / 10).toBeLessThan(1.02)
+  })
+
+  it('treats line and page delta modes as larger steps', () => {
+    expect(zoomAfterWheel(10, -3, 1)).toBeGreaterThan(zoomAfterWheel(10, -3, 0))
+  })
+
+  it('stays within the zoom limits', () => {
+    expect(zoomAfterWheel(MAX_PX_PER_DAY, -1000)).toBe(MAX_PX_PER_DAY)
+    expect(zoomAfterWheel(MIN_PX_PER_DAY, 1000)).toBe(MIN_PX_PER_DAY)
+    expect(clampPxPerDay(1000)).toBe(MAX_PX_PER_DAY)
+  })
+})
+
+describe('levelForPxPerDay and resolveScale', () => {
+  it('maps each preset back to its own header style', () => {
+    for (const [level, { pxPerDay }] of Object.entries(ZOOM_LEVELS)) {
+      expect(levelForPxPerDay(pxPerDay)).toBe(level)
+    }
+  })
+
+  it('uses the preset zoom unless a free zoom is set', () => {
+    expect(resolveScale({ zoom: 'week' })).toEqual({ pxPerDay: 12, level: 'week', custom: false })
+    expect(resolveScale({ zoom: 'week', pxPerDay: null }).custom).toBe(false)
+    expect(resolveScale({ zoom: 'week', pxPerDay: 6 })).toEqual({ pxPerDay: 6, level: 'month', custom: true })
   })
 })

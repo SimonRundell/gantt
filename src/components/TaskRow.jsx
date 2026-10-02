@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { TASK_COLOURS } from '../lib/constants.js'
 import { formatUKDate } from '../lib/dates.js'
 import { computeEnd } from '../lib/scheduler.js'
+import { baselineVarianceDays, formatVariance } from '../lib/baseline.js'
+import { parseTaskField } from '../lib/taskFields.js'
+import EditableCell from './EditableCell.jsx'
 
 /**
  * One row of the task table: the name cell (with indent, expand
@@ -21,6 +24,7 @@ import { computeEnd } from '../lib/scheduler.js'
  * @param {(taskId: string, name: string) => void} props.onRename - called when the task's name is edited and committed
  * @param {(taskId: string, assignee: string) => void} props.onAssigneeChange - called when the task's assignee is edited and committed
  * @param {(taskId: string, colour: string) => void} props.onColourChange - called when the colour swatch is clicked, cycling to the next colour
+ * @param {(taskId: string, fields: object) => void} props.onFieldChange - called when the start, duration or percent is edited and committed
  * @param {boolean} [props.readOnly] - when true, the name, assignee and colour are not editable
  * @returns {JSX.Element} the table row
  */
@@ -38,11 +42,24 @@ function TaskRow({
   onRename,
   onAssigneeChange,
   onColourChange,
+  onFieldChange,
   readOnly,
 }) {
   const end = computeEnd(task, calendar)
+  const varianceLabel = formatVariance(baselineVarianceDays(task, calendar))
   const [editingName, setEditingName] = useState(false)
-  const [editingAssignee, setEditingAssignee] = useState(false)
+
+  /**
+   * Applies a value typed into the start, duration or percent cell,
+   * ignoring anything that is not a usable value.
+   * @param {'start'|'durationDays'|'percent'} field - which field was edited
+   * @param {string} text - the typed text
+   * @returns {void}
+   */
+  function commitField(field, text) {
+    const fields = parseTaskField(field, text)
+    if (fields) onFieldChange(task.id, fields)
+  }
 
   /**
    * Cycles the task's colour to the next one in the fixed palette.
@@ -63,51 +80,67 @@ function TaskRow({
    * @returns {JSX.Element|string|null} the cell content
    */
   function renderCell(column) {
+    const isGroup = task.type === 'group'
+    const isMilestone = task.type === 'milestone'
+
     switch (column) {
       case 'start':
-        return formatUKDate(task.start)
+        return (
+          <EditableCell
+            display={formatUKDate(task.start)}
+            value={task.start}
+            valueText={formatUKDate(task.start)}
+            inputType="date"
+            label={`Start date for ${task.name}`}
+            disabled={readOnly || isGroup}
+            onCommit={(text) => commitField('start', text)}
+          />
+        )
       case 'end':
         return formatUKDate(end)
       case 'duration':
-        return task.type === 'milestone' ? '-' : `${task.durationDays}d`
-      case 'percent':
-        return task.type === 'group' ? (
-          `${task.percent}%`
+        return isMilestone ? (
+          '-'
         ) : (
-          <span className="task-row__percent">
-            {task.percent}%{task.percent >= 100 ? <span aria-hidden="true"> ✓</span> : null}
-          </span>
+          <EditableCell
+            display={`${task.durationDays}d`}
+            value={String(task.durationDays)}
+            valueText={`${task.durationDays} working days`}
+            inputType="number"
+            min={1}
+            label={`Duration for ${task.name}`}
+            disabled={readOnly || isGroup}
+            onCommit={(text) => commitField('durationDays', text)}
+          />
+        )
+      case 'percent':
+        return (
+          <EditableCell
+            display={
+              <span className="task-row__percent">
+                {task.percent}%{task.percent >= 100 ? <span aria-hidden="true"> ✓</span> : null}
+              </span>
+            }
+            value={String(task.percent)}
+            valueText={`${task.percent}%`}
+            inputType="number"
+            min={0}
+            max={100}
+            label={`Percent complete for ${task.name}`}
+            disabled={readOnly || isGroup}
+            onCommit={(text) => commitField('percent', text)}
+          />
         )
       case 'assignee':
-        return editingAssignee ? (
-          <input
-            className="task-row__edit-input"
-            autoFocus
-            defaultValue={task.assignee}
-            aria-label={`Assignee for ${task.name}`}
-            onClick={(event) => event.stopPropagation()}
-            onBlur={(event) => {
-              onAssigneeChange(task.id, event.target.value)
-              setEditingAssignee(false)
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') event.currentTarget.blur()
-              if (event.key === 'Escape') setEditingAssignee(false)
-            }}
-          />
-        ) : (
-          <button
-            type="button"
-            className="task-row__cell-button"
+        return (
+          <EditableCell
+            display={task.assignee || ''}
+            value={task.assignee}
+            valueText={task.assignee || 'none'}
+            label={`Assignee for ${task.name}`}
             disabled={readOnly}
-            aria-label={`Assignee for ${task.name}: ${task.assignee || 'none'}, click to edit`}
-            onClick={(event) => {
-              event.stopPropagation()
-              setEditingAssignee(true)
-            }}
-          >
-            {task.assignee || ''}
-          </button>
+            onCommit={(text) => onAssigneeChange(task.id, text)}
+          />
         )
       case 'predecessors':
         return (predecessorsByTask.get(task.id) ?? [])
@@ -115,6 +148,8 @@ function TaskRow({
           .join(', ')
       case 'notes':
         return task.notes || ''
+      case 'variance':
+        return varianceLabel
       default:
         return null
     }

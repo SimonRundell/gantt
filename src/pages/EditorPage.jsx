@@ -5,7 +5,12 @@ import DependencyEditor from '../components/DependencyEditor.jsx'
 import ExportDialog from '../components/ExportDialog.jsx'
 import FullChartView from '../components/FullChartView.jsx'
 import ShareDialog from '../components/ShareDialog.jsx'
+import { resolveScale } from '../lib/timelineScale.js'
+import BaselineDialog from '../components/BaselineDialog.jsx'
 import CalendarDialog from '../components/CalendarDialog.jsx'
+import ColumnsDialog from '../components/ColumnsDialog.jsx'
+import ResourcesDialog from '../components/ResourcesDialog.jsx'
+import TaskPanel from '../components/TaskPanel.jsx'
 import ShortcutsDialog from '../components/ShortcutsDialog.jsx'
 import StatusBar from '../components/StatusBar.jsx'
 import TaskTable from '../components/TaskTable.jsx'
@@ -116,9 +121,11 @@ function EditorPage() {
 const READ_ONLY_SAFE_ACTIONS = new Set([
   'SELECT_TASK',
   'SET_ZOOM',
+  'SET_SCALE',
   'TOGGLE_CRITICAL_PATH',
   'TOGGLE_BASELINE',
   'SET_COLUMNS',
+  'SET_VIEW_OPTION',
   'TOGGLE_COLLAPSE',
   'DISMISS_ERROR',
   'SET_SAVE_STATUS',
@@ -161,6 +168,10 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
   const [uploadChoice, setUploadChoice] = useState(null)
   const [exportOpen, setExportOpen] = useState(false)
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [columnsOpen, setColumnsOpen] = useState(false)
+  const [resourcesOpen, setResourcesOpen] = useState(false)
+  const [baselineOpen, setBaselineOpen] = useState(false)
   const timelineApiRef = useRef(null)
   const fileInputRef = useRef(null)
   const exportNodeRef = useRef(null)
@@ -182,6 +193,9 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
   }, [project])
 
   const selectedTask = selection.taskId ? tasksById.get(selection.taskId) ?? null : null
+  const selectedHasChildren = selectedTask ? project.tasks.some((t) => t.parentId === selectedTask.id) : false
+  const scale = resolveScale(project.view)
+  const hasBaseline = project.tasks.some((t) => t.baseline)
 
   const projectSpan = useMemo(() => {
     if (project.tasks.length === 0) return { start: null, end: null }
@@ -341,7 +355,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
       <Toolbar
         title={project.title}
         onTitleChange={(title) => dispatch({ type: 'SET_TITLE', title })}
-        zoom={project.view.zoom}
+        zoom={scale.custom ? 'custom' : project.view.zoom}
         onZoomChange={(zoom) => dispatch({ type: 'SET_ZOOM', zoom })}
         canUndo={canEdit && history.past.length > 0}
         canRedo={canEdit && history.future.length > 0}
@@ -364,6 +378,13 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
         onShare={() => setShareOpen(true)}
         onExport={() => setExportOpen(true)}
         onPrint={() => window.open(`/print/${projectId}`, '_blank', 'noopener')}
+        detailsOpen={detailsOpen}
+        onToggleDetails={() => setDetailsOpen((open) => !open)}
+        snap={project.view.snap ?? 'day'}
+        onSnapChange={(snap) => dispatch({ type: 'SET_VIEW_OPTION', key: 'snap', value: snap })}
+        onOpenColumns={() => setColumnsOpen(true)}
+        onOpenResources={() => setResourcesOpen(true)}
+        onOpenBaseline={() => setBaselineOpen(true)}
         onOpenCalendar={() => setCalendarOpen(true)}
         onShowShortcuts={() => setShortcutsOpen(true)}
       />
@@ -393,6 +414,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
               dispatch({ type: 'UPDATE_TASK_FIELDS', taskId, fields: { assignee } })
             }
             onColourChange={(taskId, colour) => dispatch({ type: 'UPDATE_TASK_FIELDS', taskId, fields: { colour } })}
+            onFieldChange={(taskId, fields) => dispatch({ type: 'UPDATE_TASK_FIELDS', taskId, fields })}
             scrollTop={scrollTop}
             onScroll={handleScroll}
           />
@@ -413,10 +435,12 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
             rows={rows}
             dependencies={project.dependencies}
             calendar={project.calendar}
-            zoom={project.view.zoom}
+            scale={scale}
             selectedTaskId={selection.taskId}
             selectedDependencyId={selectedDependencyId}
             criticalTaskIds={criticalTaskIds}
+            showBaseline={Boolean(project.view.showBaseline)}
+            showAssignee={Boolean(project.view.showAssigneeOnBars)}
             onSelect={(taskId) => {
               dispatch({ type: 'SELECT_TASK', taskId })
               setSelectedDependencyId(null)
@@ -427,11 +451,25 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
             onCreateDependency={canEdit ? handleCreateDependency : () => {}}
             scrollTop={scrollTop}
             onScroll={handleScroll}
-            onZoomChange={(zoom) => dispatch({ type: 'SET_ZOOM', zoom })}
+            onScaleChange={(pxPerDay) => dispatch({ type: 'SET_SCALE', pxPerDay })}
             onBarPointerDown={handleBarPointerDown}
             scrollApiRef={timelineApiRef}
           />
         </div>
+
+        {detailsOpen && (
+          <TaskPanel
+            task={selectedTask}
+            hasChildren={selectedHasChildren}
+            calendar={project.calendar}
+            readOnly={!canEdit}
+            onFieldChange={(taskId, fields) => dispatch({ type: 'UPDATE_TASK_FIELDS', taskId, fields })}
+            onTypeChange={(taskId, taskType) => dispatch({ type: 'SET_TASK_TYPE', taskId, taskType })}
+            onDuplicate={(taskId) => dispatch({ type: 'DUPLICATE_TASK', taskId })}
+            onDelete={(taskId) => dispatch({ type: 'DELETE_TASK', taskId })}
+            onClose={() => setDetailsOpen(false)}
+          />
+        )}
       </div>
 
       <StatusBar
@@ -517,6 +555,32 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
             dispatch({ type: 'SET_CALENDAR', calendar })
             setCalendarOpen(false)
           }}
+        />
+      )}
+
+      {columnsOpen && (
+        <ColumnsDialog
+          columns={project.view.columns}
+          showAssigneeOnBars={Boolean(project.view.showAssigneeOnBars)}
+          onColumnsChange={(columns) => dispatch({ type: 'SET_COLUMNS', columns })}
+          onShowAssigneeChange={(value) => dispatch({ type: 'SET_VIEW_OPTION', key: 'showAssigneeOnBars', value })}
+          onClose={() => setColumnsOpen(false)}
+        />
+      )}
+
+      {resourcesOpen && (
+        <ResourcesDialog tasks={project.tasks} calendar={project.calendar} onClose={() => setResourcesOpen(false)} />
+      )}
+
+      {baselineOpen && (
+        <BaselineDialog
+          hasBaseline={hasBaseline}
+          showBaseline={Boolean(project.view.showBaseline)}
+          readOnly={!canEdit}
+          onSet={() => dispatch({ type: 'SET_BASELINE' })}
+          onClear={() => dispatch({ type: 'CLEAR_BASELINE' })}
+          onToggleShow={() => dispatch({ type: 'TOGGLE_BASELINE' })}
+          onClose={() => setBaselineOpen(false)}
         />
       )}
 

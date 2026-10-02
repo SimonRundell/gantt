@@ -20,6 +20,7 @@ import TaskRow from './TaskRow.jsx'
  * @param {(taskId: string, name: string) => void} props.onRename - called when a task's name is edited and committed
  * @param {(taskId: string, assignee: string) => void} props.onAssigneeChange - called when a task's assignee is edited and committed
  * @param {(taskId: string, colour: string) => void} props.onColourChange - called when a task's colour swatch is clicked
+ * @param {(taskId: string, fields: object) => void} props.onFieldChange - called when a task's start, duration or percent is edited
  * @param {boolean} [props.readOnly] - when true, disables inline editing
  * @param {number} props.scrollTop - the vertical scroll offset to apply, kept in sync with the timeline
  * @param {(scrollTop: number) => void} props.onScroll - called when the table is scrolled vertically
@@ -37,6 +38,7 @@ function TaskTable({
   onRename,
   onAssigneeChange,
   onColourChange,
+  onFieldChange,
   readOnly,
   scrollTop,
   onScroll,
@@ -95,6 +97,7 @@ function TaskTable({
             onRename={onRename}
             onAssigneeChange={onAssigneeChange}
             onColourChange={onColourChange}
+            onFieldChange={onFieldChange}
             readOnly={readOnly}
           />
         ))}

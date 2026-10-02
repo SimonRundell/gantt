@@ -12,12 +12,23 @@ const SIZE = 10
  * @param {number} props.rowTop - the top of this task's row in pixels
  * @param {boolean} props.selected - whether this milestone is selected
  * @param {boolean} props.critical - whether this milestone is on the critical path
+ * @param {boolean} [props.showAssignee] - whether to write the assignee after the milestone name
  * @param {(taskId: string) => void} props.onSelect - called when the marker is clicked
  * @param {(event: import('react').PointerEvent, handle: 'move') => void} [props.onPointerDown] - called when a drag starts on the marker
  * @param {(taskId: string, edge: 'start'|'end', event: import('react').PointerEvent) => void} [props.onConnectorPointerDown] - called when a drag starts on the connector dot
  * @returns {JSX.Element} the milestone's SVG group
  */
-function MilestoneMarker({ task, x, rowTop, selected, critical, onSelect, onPointerDown, onConnectorPointerDown }) {
+function MilestoneMarker({
+  task,
+  x,
+  rowTop,
+  selected,
+  critical,
+  showAssignee,
+  onSelect,
+  onPointerDown,
+  onConnectorPointerDown,
+}) {
   const centreY = rowTop + ROW_HEIGHT / 2
   const points = [
     `${x},${centreY - SIZE}`,
@@ -38,6 +49,7 @@ function MilestoneMarker({ task, x, rowTop, selected, critical, onSelect, onPoin
       <polygon points={points} className={`milestone-marker__shape milestone-marker__shape--${task.colour}`} />
       <text x={x + SIZE + 6} y={centreY} className="task-bar__label">
         {task.name}
+        {showAssignee && task.assignee ? ` (${task.assignee})` : ''}
       </text>
       <circle
         cx={x - SIZE - 6}

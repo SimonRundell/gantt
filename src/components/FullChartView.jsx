@@ -1,11 +1,14 @@
 import { COLUMN_LABELS, ROW_HEIGHT } from '../lib/constants.js'
 import { todayISO } from '../lib/dates.js'
 import { computeEnd } from '../lib/scheduler.js'
-import { buildHeaderTiers, computeDateRange, dateToX, pxPerDayFor } from '../lib/timelineScale.js'
+import { buildHeaderTiers, computeDateRange, dateToX, resolveScale } from '../lib/timelineScale.js'
 import { flattenVisibleRows } from '../lib/taskTree.js'
 import DependencyArrow from './DependencyArrow.jsx'
 import MilestoneMarker from './MilestoneMarker.jsx'
 import TaskBar from './TaskBar.jsx'
+import BaselineBar from './BaselineBar.jsx'
+import PatternDefs from './PatternDefs.jsx'
+import { baselineGeometry } from '../lib/baseline.js'
 import TaskRow from './TaskRow.jsx'
 import TimelineGrid from './TimelineGrid.jsx'
 import TimelineHeader from './TimelineHeader.jsx'
@@ -26,12 +29,12 @@ const noop = () => {}
  */
 function FullChartView({ project }) {
   const rows = flattenVisibleRows(project.tasks)
-  const pxPerDay = pxPerDayFor(project.view.zoom)
+  const { pxPerDay, level } = resolveScale(project.view)
   const tasks = rows.map((r) => r.task)
   const { startISO, endISO } = computeDateRange(tasks, project.calendar)
   const totalWidth = Math.max(dateToX(endISO, startISO, pxPerDay), 200)
   const totalHeight = Math.max(rows.length * ROW_HEIGHT, ROW_HEIGHT)
-  const { minorTicks, majorTicks } = buildHeaderTiers(project.view.zoom, startISO, endISO, project.calendar.weekStartsOn)
+  const { minorTicks, majorTicks } = buildHeaderTiers(level, startISO, endISO, project.calendar.weekStartsOn, pxPerDay)
 
   const tasksById = new Map(rows.map((r) => [r.task.id, r.task]))
   const rowTopByTaskId = new Map(rows.map((r, index) => [r.task.id, index * ROW_HEIGHT]))
@@ -82,6 +85,7 @@ function FullChartView({ project }) {
         <div className="full-chart__timeline">
           <TimelineHeader width={totalWidth} minorTicks={minorTicks} majorTicks={majorTicks} />
           <svg width={totalWidth} height={totalHeight} role="img" aria-label="Chart timeline">
+            <PatternDefs />
             <TimelineGrid
               startISO={startISO}
               endISO={endISO}
@@ -115,25 +119,44 @@ function FullChartView({ project }) {
             {rows.map(({ task }, index) => {
               const rowTop = index * ROW_HEIGHT
               const barX = dateToX(task.start, startISO, pxPerDay)
+              const baseline =
+                project.view.showBaseline && task.baseline
+                  ? baselineGeometry(task, project.calendar, startISO, pxPerDay)
+                  : null
+              const showAssignee = Boolean(project.view.showAssigneeOnBars)
 
               if (task.type === 'milestone') {
                 return (
-                  <MilestoneMarker key={task.id} task={task} x={barX} rowTop={rowTop} selected={false} critical={false} onSelect={noop} />
+                  <g key={task.id}>
+                    {baseline && <BaselineBar x={baseline.x} width={0} rowTop={rowTop} />}
+                    <MilestoneMarker
+                      task={task}
+                      x={barX}
+                      rowTop={rowTop}
+                      selected={false}
+                      critical={false}
+                      showAssignee={showAssignee}
+                      onSelect={noop}
+                    />
+                  </g>
                 )
               }
 
               const endX = dateToX(computeEnd(task, project.calendar), startISO, pxPerDay) + pxPerDay
               return (
-                <TaskBar
-                  key={task.id}
-                  task={task}
-                  x={barX}
-                  width={endX - barX}
-                  rowTop={rowTop}
-                  selected={false}
-                  critical={false}
-                  onSelect={noop}
-                />
+                <g key={task.id}>
+                  {baseline && <BaselineBar x={baseline.x} width={baseline.width} rowTop={rowTop} />}
+                  <TaskBar
+                    task={task}
+                    x={barX}
+                    width={endX - barX}
+                    rowTop={rowTop}
+                    selected={false}
+                    critical={false}
+                    showAssignee={showAssignee}
+                    onSelect={noop}
+                  />
+                </g>
               )
             })}
           </svg>

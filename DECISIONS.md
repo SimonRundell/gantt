@@ -70,3 +70,21 @@ A running log of choices made while building the Gantt chart planner, kept so la
 - **Apache and the Authorization header.** Apache does not pass it to PHP by default, so the root `.htaccess` copies it into an environment variable and `bearerToken()` also checks `REDIRECT_HTTP_AUTHORIZATION` and `getallheaders()`.
 - **The root `.htaccess` now refuses any dotfile or dot folder** (`.git`, `.config.json` and so on) with a 403.
 - **`?sample=huge`** builds a 520 task chart for the 500 task performance check, alongside the existing `?sample=large`.
+
+## Details, baseline, resources and snapping
+
+- **The details panel is toggled, not automatic.** It takes 19rem from the timeline, so it opens from the Details button rather than whenever something is selected.
+- **Text edits commit on blur or Enter** (not on every keystroke), for both the panel and the table cells, so one edit is one undo step. Invalid input is ignored and the box resets.
+- **A group with children cannot change type**, since the children would lose their parent's roll-up. Empty groups and plain tasks can be converted freely.
+- **Duplicate copies only dependencies that sit wholly inside the copied subtree.** Links to tasks outside it are not copied, since a copy that silently inherited outside constraints would surprise people.
+- **Baseline is one snapshot, taken for every task at once** (start and duration). Variance is measured at the finish, in working days. Multiple baselines stay a phase 2 item.
+- **Overlap warnings count calendar overlap of a person's own tasks**, regardless of percent complete. Shared tasks (comma separated names) count for each person. It does not try to measure load per day.
+- **Patterns, not just colours.** Eight distinct SVG patterns (stripes, dots, cross-hatch and so on) at 55% white over each bar. Milestones and group brackets are already distinguished by shape.
+- **Week snapping rounds to the nearest week start** (up to 3 days into a week rounds back, later rounds forward), then to a working day.
+- **Still not built:** drag to reorder rows in the table (the Up and Down buttons remain), CSV import and export.
+
+## Wheel zoom
+
+- **A plain wheel over the timeline zooms**, as requested, rather than needing Ctrl. The cost is that the wheel no longer scrolls the rows when the pointer is over the timeline. Rows still scroll with the wheel over the task table, with the scrollbar, or with Alt + wheel over the timeline. Shift + wheel (and sideways trackpad swipes) scroll along the dates.
+- **Zoom is continuous**, stored as `view.pxPerDay`, with `view.zoom` following to the nearest preset name so older code, the schema and the Zoom list stay meaningful.
+- **The zoom is saved with the chart**, like the preset was, so it comes back as you left it and is picked up by exports. It also triggers an autosave after the usual delay.
