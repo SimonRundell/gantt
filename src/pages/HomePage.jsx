@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { formatUKDate } from '../lib/dates.js'
+import { csvToNewProject } from '../lib/csvTasks.js'
+import { formatUKDate, todayISO } from '../lib/dates.js'
 import { migrate } from '../lib/migrate.js'
 import { loadRecentProjects, recordRecentProject } from '../lib/recentProjects.js'
 import { TEMPLATES } from '../lib/templates.js'
@@ -13,7 +14,7 @@ const TEMPLATE_ICONS = { esp: 'calendar', 'web-sprint': 'rocket', blank: 'file' 
 
 /**
  * The home page: start a new chart, pick a template, open a recent
- * project from this browser, or upload a saved `.json` file.
+ * project from this browser, or upload a saved `.json` file or a `.csv` task list.
  * @returns {JSX.Element} the home page
  */
 function HomePage() {
@@ -44,7 +45,7 @@ function HomePage() {
   }
 
   /**
-   * Reads an uploaded `.json` file, validates it, and if it looks like
+   * Reads an uploaded `.csv` task list or `.json` file, validates it, and if it looks like
    * a genuine project, creates a new server copy from it.
    * @param {import('react').ChangeEvent<HTMLInputElement>} event - the file input change event
    * @returns {Promise<void>} resolves once the upload has been handled
@@ -56,6 +57,17 @@ function HomePage() {
 
     setError(null)
     const text = await file.text()
+
+    if (/\.csv$/i.test(file.name) || file.type === 'text/csv') {
+      const { project, errors } = csvToNewProject(text, file.name, todayISO())
+      if (!project) {
+        setError(`That CSV file could not be used. ${errors.join(' ')}`)
+        return
+      }
+      await createAndOpen(project)
+      return
+    }
+
     let parsed
     try {
       parsed = JSON.parse(text)
@@ -124,16 +136,16 @@ function HomePage() {
         <section className="home-page__section">
           <h2>Open a saved file</h2>
           <p>
-            Have a chart saved as a <code>.json</code> file? Open it here.
+            Have a chart saved as a <code>.json</code> file, or a task list in a <code>.csv</code> spreadsheet? Open it here.
           </p>
           <button type="button" className="btn" disabled={busy} onClick={() => fileInputRef.current?.click()}>
             <Icon name="upload" />
-            Upload a .json file
+            Upload a .json or .csv file
           </button>
           <input
             ref={fileInputRef}
             type="file"
-            accept="application/json,.json"
+            accept="application/json,.json,text/csv,.csv"
             className="home-page__file-input"
             onChange={handleUpload}
             aria-label="Upload a project file"

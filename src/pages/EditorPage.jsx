@@ -9,6 +9,7 @@ import { resolveScale } from '../lib/timelineScale.js'
 import BaselineDialog from '../components/BaselineDialog.jsx'
 import CalendarDialog from '../components/CalendarDialog.jsx'
 import ColumnsDialog from '../components/ColumnsDialog.jsx'
+import CsvImportDialog from '../components/CsvImportDialog.jsx'
 import ResourcesDialog from '../components/ResourcesDialog.jsx'
 import TaskPanel from '../components/TaskPanel.jsx'
 import ShortcutsDialog from '../components/ShortcutsDialog.jsx'
@@ -18,7 +19,9 @@ import Timeline from '../components/Timeline.jsx'
 import Toast from '../components/Toast.jsx'
 import Toolbar from '../components/Toolbar.jsx'
 import UploadChoiceDialog from '../components/UploadChoiceDialog.jsx'
-import { downloadProjectJson } from '../lib/downloadFile.js'
+import { parseTasksCsv } from '../lib/csvTasks.js'
+import { todayISO } from '../lib/dates.js'
+import { downloadProjectJson, downloadTasksCsv } from '../lib/downloadFile.js'
 import { exportChartAsPdf, exportChartAsPng } from '../lib/exportChart.js'
 import { migrate } from '../lib/migrate.js'
 import { recordRecentProject } from '../lib/recentProjects.js'
@@ -166,6 +169,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
   const [shareOpen, setShareOpen] = useState(justCreated)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [uploadChoice, setUploadChoice] = useState(null)
+  const [csvImport, setCsvImport] = useState(null)
   const [exportOpen, setExportOpen] = useState(false)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -303,7 +307,9 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
   async function handleExport(options) {
     const node = exportNodeRef.current
     if (!node) return
-    if (options.format === 'png') {
+    if (options.format === 'csv') {
+      downloadTasksCsv(project)
+    } else if (options.format === 'png') {
       await exportChartAsPng(node, project.title)
     } else {
       await exportChartAsPdf(node, { title: project.title, ...options })
@@ -322,6 +328,13 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
     if (!file) return
 
     const text = await file.text()
+
+    if (/\.csv$/i.test(file.name) || file.type === 'text/csv') {
+      const earliest = project.tasks.reduce((min, t) => (t.start < min ? t.start : min), todayISO())
+      setCsvImport({ fileName: file.name, result: parseTasksCsv(text, { defaultStart: earliest }) })
+      return
+    }
+
     let parsed
     try {
       parsed = JSON.parse(text)
@@ -391,10 +404,10 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
       <input
         ref={fileInputRef}
         type="file"
-        accept="application/json,.json"
+        accept="application/json,.json,text/csv,.csv"
         className="home-page__file-input"
         onChange={handleUploadFile}
-        aria-label="Upload a project file"
+        aria-label="Upload a project file or a CSV task list"
       />
 
       <div className="editor-page__body">
@@ -518,6 +531,22 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
             setUploadChoice(null)
           }}
           onCancel={() => setUploadChoice(null)}
+        />
+      )}
+
+      {csvImport && (
+        <CsvImportDialog
+          fileName={csvImport.fileName}
+          result={csvImport.result}
+          onAppend={() => {
+            dispatch({ type: 'IMPORT_TASKS', mode: 'append', tasks: csvImport.result.tasks, dependencies: csvImport.result.dependencies })
+            setCsvImport(null)
+          }}
+          onReplace={() => {
+            dispatch({ type: 'IMPORT_TASKS', mode: 'replace', tasks: csvImport.result.tasks, dependencies: csvImport.result.dependencies })
+            setCsvImport(null)
+          }}
+          onCancel={() => setCsvImport(null)}
         />
       )}
 

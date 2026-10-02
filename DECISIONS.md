@@ -94,3 +94,12 @@ A running log of choices made while building the Gantt chart planner, kept so la
 - **Dragging uses a handle, not the whole row**, so clicking, double-clicking and typing into cells keep working. It uses the browser's built-in drag and drop, which also scrolls the table when you drag near its edge.
 - **Dropping on an ordinary task means before or after it.** Only groups accept "inside", because only groups can have children. Indenting under a plain task is still done with the Indent button.
 - **Keyboard users keep Up, Down, Indent and Outdent** as the way to reorder; the handle is mouse only.
+
+## CSV
+
+- **Hierarchy is a Level column, predecessors are row numbers.** Both are easy to type or fill down in a spreadsheet, and they survive reordering rows better than internal ids. If a Row column is present predecessors point at it, otherwise at the position in the file.
+- **Imports never overwrite silently**: a preview with warnings comes first, "add" and "replace" are separate choices, and both undo in one step. A new chart from the home page keeps no warnings (there is nothing to compare with), so it is best for tidy files.
+- **Bad cells are warnings, bad structure is an error.** One unreadable date should not block a 200 row import, but a predecessor loop would make the schedule meaningless, so that is refused.
+- **Imported start dates are snapped to working days and successors pushed**, the same as editing in the app. Existing tasks are not rescheduled by an import.
+- **A CSV carries tasks and their dependencies only.** The calendar, baselines, collapsed groups and view settings are not included. Use the JSON download for a complete copy.
+- **Limits** match the server's defaults: 1000 tasks, 200 character names, 2000 character notes.
