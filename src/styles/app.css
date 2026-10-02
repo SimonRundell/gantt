@@ -742,17 +742,23 @@ a {
   border: none;
   box-shadow: none;
   justify-content: flex-start;
-  padding: 0;
+  /* Fill the whole cell, gutters included, so an empty cell is still a
+     big enough target to click. The negative margin cancels the cell's
+     own side padding. */
+  align-self: stretch;
+  margin: 0 -0.5rem;
+  padding: 0 0.5rem;
+  width: calc(100% + 1rem);
   font: inherit;
   text-align: left;
   color: inherit;
-  width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .task-row__cell-button:not(:disabled):hover {
+  background: color-mix(in srgb, var(--gc-primary) 8%, transparent);
   text-decoration: underline;
 }
 
