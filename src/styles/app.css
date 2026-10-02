@@ -109,7 +109,7 @@ a {
   box-shadow: none;
 }
 
-:where(select, input[type='text'], input:not([type])) {
+:where(select, input[type='text'], input[type='date'], input:not([type])) {
   font-family: inherit;
   font-size: 0.9rem;
   padding: 0.4rem 0.6rem;
@@ -1311,4 +1311,87 @@ fieldset.dialog__field label {
 
 .cm-float-ad a:hover {
   text-decoration: underline;
+}
+
+/* ---------------------------------------------------------------- */
+/* Calendar dialog                                                    */
+/* ---------------------------------------------------------------- */
+
+.calendar-dialog {
+  width: min(34rem, 92vw);
+}
+
+.calendar-dialog__intro {
+  margin-top: 0;
+  color: var(--gc-text-muted);
+  font-size: 0.9rem;
+}
+
+.calendar-dialog__days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+}
+
+.calendar-dialog__day {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+
+.calendar-dialog__add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.calendar-dialog__add label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+}
+
+.calendar-dialog__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+
+.calendar-dialog__list {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  max-height: 12rem;
+  overflow-y: auto;
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius);
+}
+
+.calendar-dialog__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.25rem 0.25rem 0.75rem;
+  border-bottom: 1px solid var(--gc-border);
+  font-size: 0.9rem;
+}
+
+.calendar-dialog__list li:last-child {
+  border-bottom: none;
+}
+
+.calendar-dialog__empty {
+  color: var(--gc-text-muted);
+  font-size: 0.9rem;
+  margin: 0.75rem 0 0;
+}
+
+.calendar-dialog__error {
+  color: #b42318;
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
 }

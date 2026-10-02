@@ -106,3 +106,10 @@
 - Added `Icon.jsx`, a small set of inline SVG icons.
 - The timeline header uses a shadow instead of a bottom border so it stays exactly 48px and its rows line up with the task table.
 - `index.html` links `/favicon.png` (the file itself still needs to be placed in `public/`).
+
+## Calendar dialog
+
+- Added `CalendarDialog` (toolbar **Calendar** button): working days, week start, and holidays or closures added as single days or ranges, shown grouped with remove buttons, plus one-click England bank holidays for 2026 and 2027. Edits are drafted and applied with Save as one undo step.
+- Saving a calendar now moves tasks that start on a non-working day forward to the next working day (groups still roll up from their children).
+- Added `src/lib/calendarEdit.js` with tests for the range and grouping logic.
+- Corrected `docs/TEACHER.md`, which numbered working days 1 to 7; the file format uses 0 (Sunday) to 6 (Saturday). The guide now describes the dialog instead of editing JSON.

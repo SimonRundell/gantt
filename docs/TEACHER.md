@@ -10,35 +10,19 @@ Notes for running the Gantt Chart Planner with a class.
 
 ## Setting the college holiday calendar
 
-Each chart has its own working calendar: Monday to Friday by default, plus a list of non-working dates (`nonWorkingDates`). Tasks skip these days when they are scheduled, so a plan that runs over half term or Christmas stretches properly.
+Each chart has its own working calendar: Monday to Friday by default, plus any holidays and closures you add. Tasks skip these days, so a plan that runs over half term or Christmas stretches properly. A task that starts on a day that has become a holiday moves forward to the next working day, and you can undo that in one step.
 
-At the moment the editor does not have a screen for editing this list, so you set it once in a template file and share that. The steps:
+1. Open a chart and choose **Calendar** in the toolbar.
+2. Tick the days of the week that count as working days, and choose which day the week starts on.
+3. Under **Holidays and closures**, pick a **From** date (and a **To** date for a run of days such as half term), then choose **Add**. Leave **To** empty for a single day.
+4. For England bank holidays choose **Add 2026 bank holidays** or **Add 2027 bank holidays**. Only those two years are built in.
+5. Each holiday or run of days appears in a list with a **Remove** button. Choose **Save calendar** when you are finished, or **Cancel** to leave the chart as it was.
 
-1. Create a chart from the template you want, then use **Download** to save it as a `.json` file.
-2. Open the file in a text editor (Notepad or VS Code) and find the `calendar` section. It looks like this:
-
-   ```json
-   "calendar": {
-     "workingDays": [1, 2, 3, 4, 5],
-     "nonWorkingDates": [],
-     "weekStartsOn": 1
-   }
-   ```
-
-3. Add your closure dates as `YYYY-MM-DD` text, for example a half term week:
-
-   ```json
-   "nonWorkingDates": ["2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30"]
-   ```
-
-   `workingDays` uses 1 for Monday up to 7 for Sunday, so `[1, 2, 3, 4, 5]` is Monday to Friday.
-4. Save the file. Upload it on the home page to check it opens. If there is a mistake the app lists the problems in plain English.
-
-The app's code also holds the 2026 UK bank holiday dates (`src/lib/calendar.js`) if you want to copy them in.
+Calendar settings belong to the chart, so to give every student the same holidays, set them up in a template chart and share that (see below).
 
 ## Sharing a template with a class
 
-1. Build the starting plan the way you want students to see it (tasks, groups, milestones, dependencies, your holiday dates).
+1. Build the starting plan the way you want students to see it (tasks, groups, milestones, dependencies, and your holidays set in the **Calendar** dialog).
 2. **Download** the `.json` file.
 3. Put it on your VLE or shared drive. Students go to the home page, choose **Upload a .json file**, and then pick **open as a new chart**. Each student gets their own copy with their own edit link, so nobody overwrites anyone else.
 
