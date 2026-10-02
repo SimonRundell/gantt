@@ -2,11 +2,11 @@ import { useState } from 'react'
 import Dialog from './Dialog.jsx'
 
 /**
- * Lets a student choose PNG or PDF export, and for PDF the page size,
+ * Lets a student choose PNG, PDF or CSV export, and for PDF the page size,
  * orientation and whether to fit the chart to one page wide or tile
  * it across a grid of pages at something closer to actual size.
  * @param {object} props
- * @param {(options: {format: 'png'|'pdf', pageSize: 'a4'|'a3', orientation: 'portrait'|'landscape', fit: 'width'|'tile'}) => Promise<void>} props.onExport - called with the chosen options
+ * @param {(options: {format: 'png'|'pdf'|'csv', pageSize: 'a4'|'a3', orientation: 'portrait'|'landscape', fit: 'width'|'tile'}) => Promise<void>} props.onExport - called with the chosen options (the page options only matter for PDF)
  * @param {() => void} props.onClose - called when the dialog should close
  * @returns {JSX.Element} the export dialog
  */
@@ -42,6 +42,10 @@ function ExportDialog({ onExport, onClose }) {
         </label>
         <label>
           <input type="radio" name="format" checked={format === 'pdf'} onChange={() => setFormat('pdf')} /> PDF
+        </label>
+        <label>
+          <input type="radio" name="format" checked={format === 'csv'} onChange={() => setFormat('csv')} /> CSV task list
+          (for Excel or Google Sheets)
         </label>
       </fieldset>
 

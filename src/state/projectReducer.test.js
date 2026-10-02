@@ -288,6 +288,42 @@ describe('MOVE_TASK', () => {
   })
 })
 
+describe('IMPORT_TASKS', () => {
+  /**
+   * Builds two imported tasks, the second depending on the first.
+   * @returns {{tasks: object[], dependencies: object[]}} the imported tasks and dependencies
+   */
+  function imported() {
+    const base = twoTaskState().project.tasks[0]
+    const tasks = [
+      { ...base, id: 'n1', name: 'New 1', start: '2026-10-10', order: 0 }, // a Saturday
+      { ...base, id: 'n2', name: 'New 2', start: '2026-10-05', order: 1 },
+    ]
+    return { tasks, dependencies: [{ id: 'nd', from: 'n1', to: 'n2', type: 'FS', lagDays: 0 }] }
+  }
+
+  it('adds the tasks after the existing ones and schedules them', () => {
+    const state = twoTaskState()
+    const next = projectReducer(state, { type: 'IMPORT_TASKS', mode: 'append', ...imported() })
+    const ordered = [...next.project.tasks].sort((x, y) => x.order - y.order).map((t) => t.name)
+    expect(ordered).toEqual(['Task A', 'Task B', 'New 1', 'New 2'])
+    const n1 = next.project.tasks.find((t) => t.id === 'n1')
+    const n2 = next.project.tasks.find((t) => t.id === 'n2')
+    expect(n1.start).toBe('2026-10-12') // Saturday moved to Monday
+    expect(n2.start).toBe('2026-10-13') // pushed to follow n1
+    expect(next.project.dependencies).toHaveLength(1)
+  })
+
+  it('replaces everything when asked, and can be undone in one step', () => {
+    const state = twoTaskState()
+    const next = projectReducer(state, { type: 'IMPORT_TASKS', mode: 'replace', ...imported() })
+    expect(next.project.tasks.map((t) => t.id).sort()).toEqual(['n1', 'n2'])
+    expect(next.history.past).toHaveLength(1)
+    const undone = projectReducer(next, { type: 'UNDO' })
+    expect(undone.project.tasks.map((t) => t.id).sort()).toEqual(['a', 'b'])
+  })
+})
+
 describe('SET_CALENDAR', () => {
   it('moves tasks that start on a new holiday to the next working day, and can be undone', () => {
     const state = twoTaskState() // both tasks start Mon 2026-10-05

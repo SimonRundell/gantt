@@ -7,6 +7,7 @@
  */
 
 import { snapForwardToWorkingDay } from '../lib/calendar.js'
+import { scheduleImported } from '../lib/csvTasks.js'
 import { generateId } from '../lib/id.js'
 import { applyDependencies, detectCycle, removeDependenciesForTask, rollUpGroups } from '../lib/scheduler.js'
 import { collectSubtreeIds, renumberOrder } from '../lib/taskTree.js'
@@ -373,6 +374,28 @@ export function projectReducer(state, action) {
       const dependencies = [...state.project.dependencies, ...copiedDependencies]
       const project = reschedule({ ...state.project, tasks, dependencies }, [])
       return { ...state, history, project, selection: { taskId: idMap.get(original.id) } }
+    }
+
+    case 'IMPORT_TASKS': {
+      const history = pushHistory(state)
+      const replace = action.mode === 'replace'
+      const existingTasks = replace ? [] : state.project.tasks
+      const existingDependencies = replace ? [] : state.project.dependencies
+
+      // New tasks go after everything already there; renumberOrder tidies up.
+      const incoming = action.tasks.map((t) => ({ ...t, order: t.order + existingTasks.length }))
+      const tasks = renumberOrder([...existingTasks, ...incoming])
+      const dependencies = [...existingDependencies, ...action.dependencies]
+      const scheduled = scheduleImported(
+        { ...state.project, tasks, dependencies },
+        new Set(incoming.map((t) => t.id)),
+      )
+      return {
+        ...state,
+        history,
+        project: { ...state.project, tasks: scheduled, dependencies },
+        selection: { taskId: null },
+      }
     }
 
     case 'SET_BASELINE': {

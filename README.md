@@ -22,6 +22,7 @@ A free, login-free Gantt chart tool for planning coursework and group projects. 
 - Autosave, with a conflict dialog if two people save at once so nothing is lost silently.
 - Share links: an edit link and a view-only link. No accounts.
 - Download and upload as a `.json` file.
+- Export the task list as CSV for Excel or Google Sheets, and import tasks from a CSV (add to a chart, replace its tasks, or start a new chart from the home page).
 - Export to PNG and PDF (A4 or A3), and a print view. Exports include the whole chart.
 - Starter templates (Employer Set Project, web build sprint plan).
 - Keyboard accessible, with a shortcuts cheat sheet (press `?`).
@@ -127,6 +128,28 @@ Schedule it daily. With cron:
 ```
 
 On Windows, use Laragon or Windows Task Scheduler to run `php.exe` with the full path to `api\cleanup.php`.
+
+## CSV task lists
+
+Choose **Export** then **CSV task list** to download the tasks. To import, use **Upload** in the editor (you can add the tasks to the chart or replace what is there) or **Upload a .json or .csv file** on the home page (this starts a new chart).
+
+The first row must be headings. Only **Name** is required. These columns are understood (case does not matter, and the usual alternatives such as Task, Resource, % complete or Days are accepted):
+
+| Column | Meaning |
+|---|---|
+| Row | Optional row number that Predecessors refer to. Without it, rows are numbered from 1 in file order. |
+| Level | Indent: 0 for top level, 1 for inside a group, and so on. A row with indented rows beneath it becomes a group. |
+| Name | The task name. |
+| Type | `task`, `milestone` or `group` (default `task`). |
+| Start | `YYYY-MM-DD` or `DD/MM/YYYY`. Blank means the chart's earliest start. Dates on non-working days move to the next working day. |
+| Duration (working days) | Whole number of working days (default 1; milestones are 0). |
+| Percent complete | 0 to 100. |
+| Assignee | Free text. |
+| Colour | One of the eight palette names (blue, green, orange, purple, teal, red, yellow, grey). |
+| Notes | Free text. |
+| Predecessors | Row numbers with optional type and lag, separated by `;` or `,`: `3`, `3FS`, `3SS+2`, `5FF-1`. |
+
+Commas, semicolons or tabs can separate columns, and quoted cells may contain line breaks. Anything that cannot be used is listed in plain English before you confirm the import. A file with predecessors that loop back on themselves is refused. Text that begins with `=`, `+`, `-` or `@` is written with a leading apostrophe on export, so a spreadsheet will not treat it as a formula, and the apostrophe is removed on import.
 
 ## Keyboard shortcuts
 

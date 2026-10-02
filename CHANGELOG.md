@@ -137,3 +137,11 @@
 - Each row in the task table has a drag handle. Drag it over another row: the top quarter drops before it, the bottom quarter drops after it (at that row's level), and the middle of a group drops inside it (at the end, expanding the group). A blue line or box shows where it will land.
 - Groups move with all their children. A task cannot be dropped inside itself or its own children, and a drop that would leave things where they are does nothing and adds no undo step. One drop is one undo step.
 - New `MOVE_TASK` action and `dropPositionFromOffset` helper, both tested. View-only charts show no handles. The Up and Down buttons remain for keyboard users.
+
+## CSV import and export
+
+- **Export** now has a **CSV task list** option: Row, Level, Name, Type, Start, Duration, Percent complete, Assignee, Colour, Notes and Predecessors (such as `3FS+2`), in outline order, with a byte order mark so Excel reads accents correctly.
+- **Import**: **Upload** in the editor accepts `.csv` as well as `.json`, and shows what was found and anything fixed or ignored before asking whether to add the tasks to the end of the chart or replace every task (one undo step either way). The home page also accepts a `.csv` and starts a new chart from it.
+- The importer is forgiving: friendly or reordered headings, ISO or UK dates, `%` signs, "5 days", comma, semicolon or tab separators, quoted multi-line cells, Level-based hierarchy (parents become groups), and predecessors by row number. Unusable cells become warnings. It refuses a file with no Name column, no rows, more than 1000 rows, or predecessors that form a loop.
+- Text starting with `=`, `+`, `-` or `@` is protected from being run as a spreadsheet formula on export, and restored on import.
+- New `src/lib/csv.js` (parser and writer) and `src/lib/csvTasks.js` (task mapping and scheduling of imported tasks), with tests, plus an `IMPORT_TASKS` reducer action.

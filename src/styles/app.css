@@ -1656,3 +1656,33 @@ fieldset.dialog__field label {
   background: color-mix(in srgb, var(--gc-primary) 18%, var(--gc-bg));
   box-shadow: inset 0 0 0 2px var(--gc-primary);
 }
+
+/* ---------------------------------------------------------------- */
+/* CSV import dialog                                                  */
+/* ---------------------------------------------------------------- */
+
+.csv-dialog {
+  width: min(32rem, 92vw);
+}
+
+.csv-dialog__file {
+  margin: -0.5rem 0 0.75rem;
+  color: var(--gc-text-muted);
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+
+.csv-dialog__list {
+  margin: 0 0 0.75rem;
+  padding-left: 1.2rem;
+  max-height: 11rem;
+  overflow-y: auto;
+  font-size: 0.85rem;
+}
+
+.csv-dialog__hint {
+  margin: 0.5rem 0 0;
+  color: var(--gc-text-muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
