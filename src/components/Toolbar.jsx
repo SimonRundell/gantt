@@ -34,6 +34,7 @@ import Icon from './Icon.jsx'
  * @param {() => void} props.onShare - called when the share button is used
  * @param {() => void} props.onExport - called when the export (PNG/PDF) button is used
  * @param {() => void} props.onPrint - called when the print button is used
+ * @param {() => void} props.onOpenCalendar - called when the working calendar button is used
  * @param {() => void} props.onShowShortcuts - called when the keyboard shortcuts button is used
  * @returns {JSX.Element} the toolbar
  */
@@ -63,6 +64,7 @@ function Toolbar({
   onShare,
   onExport,
   onPrint,
+  onOpenCalendar,
   onShowShortcuts,
 }) {
   const [draftTitle, setDraftTitle] = useState(title)
@@ -186,6 +188,11 @@ function Toolbar({
               ))}
             </select>
           </label>
+
+          <button type="button" className="btn" onClick={onOpenCalendar} disabled={readOnly}>
+            <Icon name="calendar" />
+            Calendar
+          </button>
 
           <button type="button" className="btn" onClick={onGoToToday}>
             <Icon name="today" />

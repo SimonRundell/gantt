@@ -5,6 +5,7 @@ import DependencyEditor from '../components/DependencyEditor.jsx'
 import ExportDialog from '../components/ExportDialog.jsx'
 import FullChartView from '../components/FullChartView.jsx'
 import ShareDialog from '../components/ShareDialog.jsx'
+import CalendarDialog from '../components/CalendarDialog.jsx'
 import ShortcutsDialog from '../components/ShortcutsDialog.jsx'
 import StatusBar from '../components/StatusBar.jsx'
 import TaskTable from '../components/TaskTable.jsx'
@@ -159,6 +160,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [uploadChoice, setUploadChoice] = useState(null)
   const [exportOpen, setExportOpen] = useState(false)
+  const [calendarOpen, setCalendarOpen] = useState(false)
   const timelineApiRef = useRef(null)
   const fileInputRef = useRef(null)
   const exportNodeRef = useRef(null)
@@ -362,6 +364,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
         onShare={() => setShareOpen(true)}
         onExport={() => setExportOpen(true)}
         onPrint={() => window.open(`/print/${projectId}`, '_blank', 'noopener')}
+        onOpenCalendar={() => setCalendarOpen(true)}
         onShowShortcuts={() => setShortcutsOpen(true)}
       />
       <input
@@ -502,6 +505,17 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
             rawDispatch({ type: 'SET_SERVER_META', fields: { revision: conflict.revision } })
             setConflict(null)
             await save(conflict.revision)
+          }}
+        />
+      )}
+
+      {calendarOpen && (
+        <CalendarDialog
+          calendar={project.calendar}
+          onClose={() => setCalendarOpen(false)}
+          onSave={(calendar) => {
+            dispatch({ type: 'SET_CALENDAR', calendar })
+            setCalendarOpen(false)
           }}
         />
       )}

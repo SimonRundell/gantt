@@ -27,15 +27,16 @@ function HomePage() {
    * Creates a project on the server from an optional seed document and
    * navigates to its editor, remembering it in this browser's recent list.
    * @param {object|null} seedProject - a partial project document, or null for a blank project
+   * @param {boolean} [showShare] - whether to open the share dialog straight away (not wanted for example charts)
    * @returns {Promise<void>} resolves once navigation has started
    */
-  async function createAndOpen(seedProject) {
+  async function createAndOpen(seedProject, showShare = true) {
     setBusy(true)
     setError(null)
     try {
       const { id, editToken, project } = await createProject(seedProject)
       recordRecentProject({ id, title: project.title, editToken })
-      navigate(`/p/${id}?k=${editToken}`, { state: { justCreated: true } })
+      navigate(`/p/${id}?k=${editToken}`, { state: { justCreated: showShare } })
     } catch {
       setError('Could not create a new chart right now. Check your connection and try again.')
       setBusy(false)
@@ -105,7 +106,7 @@ function HomePage() {
                 type="button"
                 className="home-page__template-card"
                 disabled={busy}
-                onClick={() => createAndOpen(template.build())}
+                onClick={() => createAndOpen(template.build(), template.id === 'blank')}
               >
                 <span className="home-page__template-icon">
                   <Icon name={TEMPLATE_ICONS[template.id] ?? 'file'} />

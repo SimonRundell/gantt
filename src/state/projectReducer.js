@@ -6,6 +6,7 @@
  * @module state/projectReducer
  */
 
+import { snapForwardToWorkingDay } from '../lib/calendar.js'
 import { generateId } from '../lib/id.js'
 import { applyDependencies, detectCycle, removeDependenciesForTask, rollUpGroups } from '../lib/scheduler.js'
 import { collectSubtreeIds, renumberOrder } from '../lib/taskTree.js'
@@ -152,9 +153,15 @@ export function projectReducer(state, action) {
 
     case 'SET_CALENDAR': {
       const history = pushHistory(state)
+      // Tasks that now start on a non-working day (a new holiday, say)
+      // move forward to the next working day. Groups roll up from their
+      // children, so only real tasks and milestones are snapped.
+      const tasks = state.project.tasks.map((t) =>
+        t.type === 'group' ? t : { ...t, start: snapForwardToWorkingDay(t.start, action.calendar) },
+      )
       const project = reschedule(
-        { ...state.project, calendar: action.calendar },
-        state.project.tasks.map((t) => t.id),
+        { ...state.project, calendar: action.calendar, tasks },
+        tasks.map((t) => t.id),
       )
       return { ...state, history, project }
     }

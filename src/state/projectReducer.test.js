@@ -130,6 +130,26 @@ describe('ADD_DEPENDENCY', () => {
   })
 })
 
+describe('SET_CALENDAR', () => {
+  it('moves tasks that start on a new holiday to the next working day, and can be undone', () => {
+    const state = twoTaskState() // both tasks start Mon 2026-10-05
+    const calendar = {
+      workingDays: [1, 2, 3, 4, 5],
+      nonWorkingDates: ['2026-10-05', '2026-10-06'],
+      weekStartsOn: 1,
+    }
+
+    const next = projectReducer(state, { type: 'SET_CALENDAR', calendar })
+    expect(next.project.calendar).toEqual(calendar)
+    expect(next.project.tasks.map((t) => t.start)).toEqual(['2026-10-07', '2026-10-07'])
+    expect(next.history.past).toHaveLength(1)
+
+    const undone = projectReducer(next, { type: 'UNDO' })
+    expect(undone.project.tasks.map((t) => t.start)).toEqual(['2026-10-05', '2026-10-05'])
+    expect(undone.project.calendar.nonWorkingDates).toEqual([])
+  })
+})
+
 describe('undo and redo', () => {
   it('reverts a rename and can redo it again', () => {
     const state = twoTaskState()
