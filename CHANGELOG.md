@@ -98,3 +98,11 @@
 - Added JSDoc to 15 nested helper functions that lacked it.
 - New tests: undo/redo across drag, resize, edit, indent and delete; FS, SS, FF and SF across a weekend and holiday block; `safePixelRatio`. Suite is 120 tests, all passing.
 - Setup note: `.config.json` is gitignored, so a fresh checkout needs `cp .config.example.json .config.json` before `npm run build`.
+
+## Visual refresh
+
+- New look: navy and sky blue brand theme, a two row toolbar (title bar plus tool groups) with line icons, button variants (`btn--primary`, `btn--accent`, `btn--ghost`, `btn--danger`, `btn--on-dark`), a hero header and template cards on the home page, softer dialogs, bar shadows and a clearer table header. All in `src/styles/app.css`.
+- Added the floating college banner (`src/components/CMFloatAd.jsx`), shown on every page and hidden when printing. Its inline styles were moved into CSS classes to keep to the single stylesheet rule, and the status bar leaves room for it.
+- Added `Icon.jsx`, a small set of inline SVG icons.
+- The timeline header uses a shadow instead of a bottom border so it stays exactly 48px and its rows line up with the task table.
+- `index.html` links `/favicon.png` (the file itself still needs to be placed in `public/`).
