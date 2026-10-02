@@ -83,7 +83,10 @@ function HomePage() {
     <div className="home">
       <header className="home__hero">
         <div className="home__hero-inner">
-          <h1>Gantt Chart Planner</h1>
+          <div className="home__brand">
+            <img className="home__logo" src="/favicon.png" alt="" width="64" height="64" />
+            <h1>Gantt Chart Planner</h1>
+          </div>
           <p>
             Plan your coursework project, share the link with yourself or your group, and come back to it any
             time.
