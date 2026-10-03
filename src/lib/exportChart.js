@@ -1,35 +1,9 @@
 import { toPng } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import { slugify } from './downloadFile.js'
+import { capScaleToPageBudget, HEADER_MM, MARGIN_MM, MM_PER_PX, pageContentArea, safePixelRatio } from './pdfLayout.js'
 
-/** @type {Record<'a4'|'a3', [number, number]>} page sizes in millimetres, portrait (width, height) */
-const PAGE_SIZES_MM = { a4: [210, 297], a3: [297, 420] }
-
-const MARGIN_MM = 10
-const HEADER_MM = 8
-const FOOTER_MM = 7
-/** @type {number} millimetres per CSS pixel at the usual 96 DPI, used for "actual size" tiling */
-const MM_PER_PX = 25.4 / 96
-
-/** @type {number} longest canvas side most browsers will draw reliably (Firefox and Safari are stricter than Chrome) */
-const MAX_CANVAS_SIDE_PX = 16000
-/** @type {number} largest canvas area (in pixels) that is safe across browsers */
-const MAX_CANVAS_AREA_PX = 100_000_000
-
-/**
- * Picks how many image pixels to render per CSS pixel. Normally 2 for a
- * crisp result, but reduced for very large charts so the canvas stays
- * within browser limits and the whole chart is exported rather than a
- * blank or truncated image.
- * @param {HTMLElement} node - the element about to be rasterised
- * @returns {number} the pixel ratio to use, between a small minimum and 2
- */
-export function safePixelRatio(node) {
-  const { width, height } = node.getBoundingClientRect()
-  const bySide = MAX_CANVAS_SIDE_PX / Math.max(width, height, 1)
-  const byArea = Math.sqrt(MAX_CANVAS_AREA_PX / Math.max(width * height, 1))
-  return Math.max(0.25, Math.min(2, bySide, byArea))
-}
+export { safePixelRatio }
 
 /**
  * Loads a data URL into an Image element, so its pixel dimensions and
@@ -63,7 +37,11 @@ function todayStamp() {
  * @returns {Promise<void>} resolves once the download has started
  */
 export async function exportChartAsPng(node, title) {
-  const dataUrl = await toPng(node, { pixelRatio: safePixelRatio(node), backgroundColor: '#ffffff', cacheBust: true })
+  const dataUrl = await toPng(node, {
+    pixelRatio: safePixelRatio(node),
+    backgroundColor: '#ffffff',
+    cacheBust: true,
+  })
   const link = document.createElement('a')
   link.href = dataUrl
   link.download = `${slugify(title)}-${todayStamp().compact}.png`
@@ -75,13 +53,16 @@ export async function exportChartAsPng(node, title) {
 /**
  * Rasterises a DOM node and lays it out across one or more PDF pages,
  * with a title/date header and a page-number/licence footer on every
- * page, then triggers a download.
+ * page, then triggers a download. The number of pages is capped (see
+ * {@link MAX_TILE_PAGES} in `lib/pdfLayout.js`): a long or detailed
+ * chart backs off from "actual size" automatically rather than
+ * producing a PDF nobody could use.
  * @param {HTMLElement} node - the element to rasterise
  * @param {object} options
  * @param {string} options.title - the project title, used for the filename and header
  * @param {'a4'|'a3'} options.pageSize - the page size
  * @param {'portrait'|'landscape'} options.orientation - the page orientation
- * @param {'width'|'tile'} options.fit - "width" scales the whole chart to one page's width, tiling vertically as needed; "tile" prints near actual size across a grid of pages
+ * @param {'width'|'tile'} options.fit - "width" scales the whole chart to one page's width, tiling vertically as needed; "tile" prints close to actual size across a grid of pages, capped to a sane page count
  * @returns {Promise<void>} resolves once the download has started
  */
 export async function exportChartAsPdf(node, { title, pageSize, orientation, fit }) {
@@ -91,19 +72,15 @@ export async function exportChartAsPdf(node, { title, pageSize, orientation, fit
   const pixelWidth = img.width
   const pixelHeight = img.height
 
-  const [sizeA, sizeB] = PAGE_SIZES_MM[pageSize]
-  const pageWidthMm = orientation === 'landscape' ? Math.max(sizeA, sizeB) : Math.min(sizeA, sizeB)
-  const pageHeightMm = orientation === 'landscape' ? Math.min(sizeA, sizeB) : Math.max(sizeA, sizeB)
-  const contentWidthMm = pageWidthMm - MARGIN_MM * 2
-  const contentHeightMm = pageHeightMm - MARGIN_MM * 2 - HEADER_MM - FOOTER_MM
-
-  const scale = fit === 'width' ? contentWidthMm / pixelWidth : MM_PER_PX / pixelRatio
-  const pageContentWidthPx = contentWidthMm / scale
-  const pageContentHeightPx = contentHeightMm / scale
-
-  const columns = Math.max(1, Math.ceil(pixelWidth / pageContentWidthPx))
-  const pageRows = Math.max(1, Math.ceil(pixelHeight / pageContentHeightPx))
-  const totalPages = columns * pageRows
+  const { pageWidthMm, pageHeightMm, contentWidthMm, contentHeightMm } = pageContentArea(pageSize, orientation)
+  const startingScale = fit === 'width' ? contentWidthMm / pixelWidth : MM_PER_PX / pixelRatio
+  const { scale, columns, rows: pageRows, totalPages, pageContentWidthPx, pageContentHeightPx } = capScaleToPageBudget(
+    startingScale,
+    contentWidthMm,
+    contentHeightMm,
+    pixelWidth,
+    pixelHeight,
+  )
 
   const doc = new jsPDF({ orientation, unit: 'mm', format: pageSize })
   const { iso: dateIso, compact: dateCompact } = todayStamp()
@@ -111,12 +88,17 @@ export async function exportChartAsPdf(node, { title, pageSize, orientation, fit
 
   for (let row = 0; row < pageRows; row++) {
     for (let col = 0; col < columns; col++) {
-      if (pageIndex > 0) doc.addPage()
+      const sx = Math.round(col * pageContentWidthPx)
+      const sy = Math.round(row * pageContentHeightPx)
+      // Skip a tile whose top-left corner has already rounded past the
+      // captured image's actual edge (possible on the last row/column
+      // from floating point rounding) rather than drawing a 0x0 canvas,
+      // which produces a data URL jsPDF cannot decode as a PNG.
+      if (sx >= pixelWidth || sy >= pixelHeight) continue
+      const sw = Math.max(1, Math.min(Math.round(pageContentWidthPx), pixelWidth - sx))
+      const sh = Math.max(1, Math.min(Math.round(pageContentHeightPx), pixelHeight - sy))
 
-      const sx = col * pageContentWidthPx
-      const sy = row * pageContentHeightPx
-      const sw = Math.min(pageContentWidthPx, pixelWidth - sx)
-      const sh = Math.min(pageContentHeightPx, pixelHeight - sy)
+      if (pageIndex > 0) doc.addPage()
 
       const tileCanvas = document.createElement('canvas')
       tileCanvas.width = sw

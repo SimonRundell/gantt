@@ -107,3 +107,9 @@ A running log of choices made while building the Gantt chart planner, kept so la
 ## Export bundle size
 
 - **`jsPDF`/`html-to-image` are loaded with a dynamic `import()` inside the export handler, not a static import at the top of `EditorPage.jsx`.** Most students never click Export in a given session, so shipping ~400 KB of PDF/image rendering code to everyone on first load made the editor slower to open for no benefit to most of them. The one-time cost (a network fetch the first time Export is used that session) is a better trade for a tool meant to load quickly on a college laptop.
+
+## PDF tile page cap
+
+- **"Tile" fit is capped at 20 pages, backing off from actual size rather than ever printing at true 96 DPI unconditionally.** A long or day-zoomed chart tiled at actual size has no natural upper bound — a real project produced 114 pages, which nobody is going to read, print or staple together. Twenty is a page count someone could plausibly flick through; beyond that the chart needs a coarser zoom or the "fit to page width" option instead.
+- **The back-off shrinks the scale in fixed 15% steps rather than solving for the exact page count.** Simple, always terminates (capped at 40 attempts), and lands close enough — the exact page count is not something a teacher is choosing to the page.
+- **The page-layout maths lives in its own dependency-free module (`src/lib/pdfLayout.js`)**, separate from `exportChart.js` which does the actual rasterising and PDF assembly. It exists so a future page-count estimate in the export dialog does not need to pull jsPDF or html-to-image into the main bundle just to show a number.
