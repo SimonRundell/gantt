@@ -1,6 +1,7 @@
 import { addCalendarDays, calendarDaysBetween } from '../lib/dates.js'
 import { isWorkingDay } from '../lib/calendar.js'
 import { dateToX } from '../lib/timelineScale.js'
+import { CHART_COLOURS } from '../lib/constants.js'
 
 /**
  * The timeline's background layer: a shaded column behind every
@@ -37,6 +38,7 @@ function TimelineGrid({ startISO, endISO, pxPerDay, width, height, calendar, min
           width={pxPerDay}
           height={height}
           className="timeline-grid__non-working"
+          fill={CHART_COLOURS.nonWorking}
         />
       ))}
       {minorTicks.map((tick) => (
@@ -47,9 +49,17 @@ function TimelineGrid({ startISO, endISO, pxPerDay, width, height, calendar, min
           y1={0}
           y2={height}
           className="timeline-grid__line"
+          stroke={CHART_COLOURS.gridLine}
         />
       ))}
-      <line x1={0} x2={width} y1={height} y2={height} className="timeline-grid__line" />
+      <line
+        x1={0}
+        x2={width}
+        y1={height}
+        y2={height}
+        className="timeline-grid__line"
+        stroke={CHART_COLOURS.gridLine}
+      />
     </g>
   )
 }

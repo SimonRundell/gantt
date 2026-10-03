@@ -150,7 +150,11 @@
 
 - `jsPDF` and `html-to-image` are now dynamically `import()`ed inside the export handler instead of statically imported, so they only download if a student actually clicks Export. Cut the main bundle from 966 KB to 553 KB; the two libraries live in their own ~413 KB chunk fetched on demand.
 
-## Print layout fix
+## Exported chart colour fix
+
+- Fixed PNG and PDF export rendering every bar, milestone, weekend column and dependency arrow as solid black. `html-to-image` (the library used to rasterise the chart) does not apply computed styles to SVG elements, so colour carried only as a CSS class (`task-bar__shape--blue` and so on) was lost entirely in the exported image, falling back to the SVG default of opaque black - the on-screen editor and the print view were never affected, since both use the real stylesheet.
+- Every coloured shape on the timeline (task bars, patterns, group brackets, milestones, dependency arrows, the today line, weekend shading, grid lines, labels) now also carries its colour as a `fill`/`stroke` attribute directly, alongside its class. A CSS class always outranks a plain attribute, so this changes nothing on screen or in print; it only takes over as a fallback when no stylesheet reaches the shape at all, which is exactly what was happening during export.
+- New `TASK_COLOUR_HEX` and `CHART_COLOURS` in `src/lib/constants.js`, kept in sync with the `--gc-*` custom properties in `app.css`.
 
 - Fixed the printed chart sitting off-centre with most of its width run off the right-hand edge of the page. `.print-page` was reusing the home page's narrow, centred prose column (`max-width: 56rem`) for the print output too, which is always wider than that; a print-only override now lets it use the page's full width instead.
 

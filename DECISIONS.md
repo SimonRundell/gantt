@@ -108,6 +108,11 @@ A running log of choices made while building the Gantt chart planner, kept so la
 
 - **`jsPDF`/`html-to-image` are loaded with a dynamic `import()` inside the export handler, not a static import at the top of `EditorPage.jsx`.** Most students never click Export in a given session, so shipping ~400 KB of PDF/image rendering code to everyone on first load made the editor slower to open for no benefit to most of them. The one-time cost (a network fetch the first time Export is used that session) is a better trade for a tool meant to load quickly on a college laptop.
 
+## Exported chart colour
+
+- **Colour is set as both a CSS class and a plain `fill`/`stroke` attribute on every SVG shape in the timeline**, rather than moving colour out of CSS entirely. A bare presentation attribute has the lowest specificity there is, so the class always wins wherever a stylesheet is actually present (the editor, the print view); the attribute only matters as the fallback for `html-to-image`'s rasterisation, which drops SVG styling but keeps attributes. Two sources of truth for the same colour is a real cost, so `TASK_COLOUR_HEX`/`CHART_COLOURS` in `constants.js` carry a comment pointing back at the `--gc-*` custom properties in `app.css` they must match.
+- **This was diagnosed by inspecting `html-to-image`'s own serialised SVG output** (`toSvg()`), not by guessing from the exported image: it confirmed zero SVG descendants received an inlined style, while hundreds of ordinary HTML elements did - which is also why the task table's text and colour swatches (plain HTML, styled with `background-color`) were never affected, only the SVG timeline was.
+
 ## PDF tile page cap
 
 - **"Tile" fit is capped at 20 pages, backing off from actual size rather than ever printing at true 96 DPI unconditionally.** A long or day-zoomed chart tiled at actual size has no natural upper bound — a real project produced 114 pages, which nobody is going to read, print or staple together. Twenty is a page count someone could plausibly flick through; beyond that the chart needs a coarser zoom or the "fit to page width" option instead.

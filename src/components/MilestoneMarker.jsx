@@ -1,4 +1,4 @@
-import { ROW_HEIGHT } from '../lib/constants.js'
+import { CHART_COLOURS, ROW_HEIGHT, TASK_COLOUR_HEX } from '../lib/constants.js'
 
 const SIZE = 10
 
@@ -46,8 +46,12 @@ function MilestoneMarker({
       onClick={() => onSelect(task.id)}
       onPointerDown={(event) => onPointerDown?.(event, 'move')}
     >
-      <polygon points={points} className={`milestone-marker__shape milestone-marker__shape--${task.colour}`} />
-      <text x={x + SIZE + 6} y={centreY} className="task-bar__label">
+      <polygon
+        points={points}
+        className={`milestone-marker__shape milestone-marker__shape--${task.colour}`}
+        fill={TASK_COLOUR_HEX[task.colour]}
+      />
+      <text x={x + SIZE + 6} y={centreY} className="task-bar__label" fill={CHART_COLOURS.text}>
         {task.name}
         {showAssignee && task.assignee ? ` (${task.assignee})` : ''}
       </text>
@@ -56,6 +60,7 @@ function MilestoneMarker({
         cy={centreY}
         r={4}
         className="task-bar__connector"
+        opacity={0}
         data-connector-task-id={task.id}
         data-connector-edge="start"
         aria-label={`Draw a dependency from ${task.name}`}
