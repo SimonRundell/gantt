@@ -145,3 +145,7 @@
 - The importer is forgiving: friendly or reordered headings, ISO or UK dates, `%` signs, "5 days", comma, semicolon or tab separators, quoted multi-line cells, Level-based hierarchy (parents become groups), and predecessors by row number. Unusable cells become warnings. It refuses a file with no Name column, no rows, more than 1000 rows, or predecessors that form a loop.
 - Text starting with `=`, `+`, `-` or `@` is protected from being run as a spreadsheet formula on export, and restored on import.
 - New `src/lib/csv.js` (parser and writer) and `src/lib/csvTasks.js` (task mapping and scheduling of imported tasks), with tests, plus an `IMPORT_TASKS` reducer action.
+
+## Lazy-loaded export libraries
+
+- `jsPDF` and `html-to-image` are now dynamically `import()`ed inside the export handler instead of statically imported, so they only download if a student actually clicks Export. Cut the main bundle from 966 KB to 553 KB; the two libraries live in their own ~413 KB chunk fetched on demand.
