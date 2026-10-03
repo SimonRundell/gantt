@@ -103,3 +103,7 @@ A running log of choices made while building the Gantt chart planner, kept so la
 - **Imported start dates are snapped to working days and successors pushed**, the same as editing in the app. Existing tasks are not rescheduled by an import.
 - **A CSV carries tasks and their dependencies only.** The calendar, baselines, collapsed groups and view settings are not included. Use the JSON download for a complete copy.
 - **Limits** match the server's defaults: 1000 tasks, 200 character names, 2000 character notes.
+
+## Export bundle size
+
+- **`jsPDF`/`html-to-image` are loaded with a dynamic `import()` inside the export handler, not a static import at the top of `EditorPage.jsx`.** Most students never click Export in a given session, so shipping ~400 KB of PDF/image rendering code to everyone on first load made the editor slower to open for no benefit to most of them. The one-time cost (a network fetch the first time Export is used that session) is a better trade for a tool meant to load quickly on a college laptop.

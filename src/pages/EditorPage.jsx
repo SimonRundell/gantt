@@ -22,7 +22,6 @@ import UploadChoiceDialog from '../components/UploadChoiceDialog.jsx'
 import { parseTasksCsv } from '../lib/csvTasks.js'
 import { todayISO } from '../lib/dates.js'
 import { downloadProjectJson, downloadTasksCsv } from '../lib/downloadFile.js'
-import { exportChartAsPdf, exportChartAsPng } from '../lib/exportChart.js'
 import { migrate } from '../lib/migrate.js'
 import { recordRecentProject } from '../lib/recentProjects.js'
 import { computeEnd, criticalPath } from '../lib/scheduler.js'
@@ -309,7 +308,15 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
     if (!node) return
     if (options.format === 'csv') {
       downloadTasksCsv(project)
-    } else if (options.format === 'png') {
+      return
+    }
+    // Loaded on demand rather than imported at the top of the file:
+    // jsPDF and html-to-image are only needed if a student actually
+    // exports an image or PDF, and pulling them into the main bundle
+    // added several hundred kilobytes every student would download
+    // just to open the editor.
+    const { exportChartAsPdf, exportChartAsPng } = await import('../lib/exportChart.js')
+    if (options.format === 'png') {
       await exportChartAsPng(node, project.title)
     } else {
       await exportChartAsPdf(node, { title: project.title, ...options })
