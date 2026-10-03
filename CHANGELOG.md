@@ -149,3 +149,8 @@
 ## Lazy-loaded export libraries
 
 - `jsPDF` and `html-to-image` are now dynamically `import()`ed inside the export handler instead of statically imported, so they only download if a student actually clicks Export. Cut the main bundle from 966 KB to 553 KB; the two libraries live in their own ~413 KB chunk fetched on demand.
+
+## PDF export page cap
+
+- Fixed "tile" PDF export producing dozens of pages for a long or zoomed-in chart (a ~130 task chart at day zoom needed 77 A4 pages before this fix). The tiling scale now backs off automatically until the chart fits within 20 pages, rather than always tiling at actual size.
+- New `src/lib/pdfLayout.js`: the page-layout maths (page size/margins, tiling grid, the scale back-off) pulled out of `exportChart.js` as a dependency-free module, so the export dialog can show a page-count estimate later without pulling jsPDF or html-to-image into the main bundle.
