@@ -1,4 +1,4 @@
-import { ROW_HEIGHT } from '../lib/constants.js'
+import { CHART_COLOURS, ROW_HEIGHT, TASK_COLOUR_HEX } from '../lib/constants.js'
 
 const BAR_INSET = 6
 const BAR_HEIGHT = ROW_HEIGHT - BAR_INSET * 2
@@ -52,8 +52,14 @@ function TaskBar({
         <path
           d={`M ${x} ${y} v ${GROUP_TICK_HEIGHT} M ${x} ${y} h ${barWidth} M ${x + barWidth} ${y} v ${GROUP_TICK_HEIGHT}`}
           className={`task-bar__group-shape task-bar__group-shape--${task.colour}`}
+          stroke={TASK_COLOUR_HEX[task.colour]}
         />
-        <text x={x + barWidth + 6} y={rowTop + ROW_HEIGHT / 2} className="task-bar__label">
+        <text
+          x={x + barWidth + 6}
+          y={rowTop + ROW_HEIGHT / 2}
+          className="task-bar__label"
+          fill={CHART_COLOURS.text}
+        >
           {task.name}{who} ({task.percent}%)
         </text>
       </g>
@@ -79,6 +85,7 @@ function TaskBar({
         height={BAR_HEIGHT}
         rx={4}
         className={`task-bar__shape task-bar__shape--${task.colour}`}
+        fill={TASK_COLOUR_HEX[task.colour]}
       />
       <rect
         x={x}
@@ -89,8 +96,8 @@ function TaskBar({
         className="task-bar__pattern"
         fill={`url(#bar-pattern-${task.colour})`}
       />
-      <rect x={x} y={y} width={fillWidth} height={BAR_HEIGHT} rx={4} className="task-bar__progress" />
-      <text x={x + barWidth + 6} y={rowTop + ROW_HEIGHT / 2} className="task-bar__label">
+      <rect x={x} y={y} width={fillWidth} height={BAR_HEIGHT} rx={4} className="task-bar__progress" fill="rgba(0, 0, 0, 0.28)" />
+      <text x={x + barWidth + 6} y={rowTop + ROW_HEIGHT / 2} className="task-bar__label" fill={CHART_COLOURS.text}>
         {task.name}
         {who}
       </text>
@@ -100,6 +107,7 @@ function TaskBar({
         width={6}
         height={BAR_HEIGHT}
         className="task-bar__handle task-bar__handle--start"
+        fill="transparent"
         onPointerDown={(event) => {
           event.stopPropagation()
           onPointerDown?.(event, 'resize-start', barWidth)
@@ -111,6 +119,7 @@ function TaskBar({
         width={6}
         height={BAR_HEIGHT}
         className="task-bar__handle task-bar__handle--end"
+        fill="transparent"
         onPointerDown={(event) => {
           event.stopPropagation()
           onPointerDown?.(event, 'resize-end', barWidth)
@@ -122,6 +131,7 @@ function TaskBar({
         width={8}
         height={8}
         className="task-bar__percent-handle"
+        opacity={0}
         aria-label={`${task.name} percent complete handle`}
         onPointerDown={(event) => {
           event.stopPropagation()
@@ -133,6 +143,7 @@ function TaskBar({
         cy={rowTop + ROW_HEIGHT / 2}
         r={4}
         className="task-bar__connector"
+        opacity={0}
         data-connector-task-id={task.id}
         data-connector-edge="start"
         aria-label={`Draw a dependency from the start of ${task.name}`}
@@ -146,6 +157,7 @@ function TaskBar({
         cy={rowTop + ROW_HEIGHT / 2}
         r={4}
         className="task-bar__connector"
+        opacity={0}
         data-connector-task-id={task.id}
         data-connector-edge="end"
         aria-label={`Draw a dependency from the end of ${task.name}`}

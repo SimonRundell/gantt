@@ -1,4 +1,4 @@
-import { ROW_HEIGHT } from '../lib/constants.js'
+import { CHART_COLOURS, ROW_HEIGHT } from '../lib/constants.js'
 import { dateToX } from '../lib/timelineScale.js'
 import { computeEnd } from '../lib/scheduler.js'
 
@@ -79,9 +79,9 @@ function DependencyArrow({
       tabIndex={0}
       onClick={(event) => onSelect(dependency.id, event)}
     >
-      <path d={path} className="dependency-arrow__hit" />
-      <path d={path} className="dependency-arrow__line" />
-      <polygon points={arrowPoints} className="dependency-arrow__head" />
+      <path d={path} className="dependency-arrow__hit" fill="none" />
+      <path d={path} className="dependency-arrow__line" fill="none" stroke={CHART_COLOURS.textMuted} strokeWidth={1.5} />
+      <polygon points={arrowPoints} className="dependency-arrow__head" fill={CHART_COLOURS.textMuted} />
     </g>
   )
 }
