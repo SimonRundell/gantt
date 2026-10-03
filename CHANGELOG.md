@@ -150,6 +150,10 @@
 
 - `jsPDF` and `html-to-image` are now dynamically `import()`ed inside the export handler instead of statically imported, so they only download if a student actually clicks Export. Cut the main bundle from 966 KB to 553 KB; the two libraries live in their own ~413 KB chunk fetched on demand.
 
+## Print layout fix
+
+- Fixed the printed chart sitting off-centre with most of its width run off the right-hand edge of the page. `.print-page` was reusing the home page's narrow, centred prose column (`max-width: 56rem`) for the print output too, which is always wider than that; a print-only override now lets it use the page's full width instead.
+
 ## PDF export page cap
 
 - Fixed "tile" PDF export producing dozens of pages for a long or zoomed-in chart (a ~130 task chart at day zoom needed 77 A4 pages before this fix). The tiling scale now backs off automatically until the chart fits within 20 pages, rather than always tiling at actual size.

@@ -388,6 +388,18 @@ a {
     display: none !important;
   }
 
+  /*
+   * .print-page also styles the home page's prose column (narrow,
+   * centred). That max-width/centring fights with @page's own margin
+   * here, pushing the chart off to one side - the printed chart should
+   * just fill the page from its @page margin instead.
+   */
+  .print-page {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
   .task-row,
   .task-table__header {
     break-inside: avoid;
