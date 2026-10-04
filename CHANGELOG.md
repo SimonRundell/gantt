@@ -174,3 +174,9 @@
 - New toolbar **Filter** button: narrow the task table and timeline to a single assignee (picked from the names already used in the chart) and/or a date range. A task's whole span is checked against the date range, not just its start, so a long task that merely overlaps the window still shows. A matching task's ancestors stay visible too, so the hierarchy still makes sense; a task hidden behind a collapsed group stays hidden regardless of the filter.
 - Viewing only: the filter lives in the browser, not the saved chart, and never affects what PNG, PDF, CSV, Excel or print output shows - two people on the same edit link can each have their own filter without affecting the other, or what either of them exports.
 - New `src/lib/taskFilter.js` (`distinctAssignees`, `filterRows`), fully unit tested, and a new `FilterDialog`.
+
+## Task comments
+
+- The task details panel has a new **Comments** section, separate from the existing free-text Notes field: an append-only log (no edit or delete) of author, text and when it was added, newest first. There are no accounts, so a name is typed alongside each comment rather than remembered.
+- Schema version 2: every task gets a `comments` array. `migrate.js` adds an empty one to a task from an older file; the server (`api/storage.php`) validates each comment's author (60 characters maximum) and text (1-1000 characters).
+- Adding a comment is one undo step, same as any other edit.

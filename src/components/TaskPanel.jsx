@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { baselineEnd, baselineVarianceDays, formatVariance } from '../lib/baseline.js'
 import { TASK_COLOURS } from '../lib/constants.js'
 import { formatUKDate } from '../lib/dates.js'
@@ -28,10 +29,22 @@ const TASK_TYPES = [
  * @param {(taskId: string, taskType: string) => void} props.onTypeChange - called when the type is changed
  * @param {(taskId: string) => void} props.onDuplicate - called when Duplicate is chosen
  * @param {(taskId: string) => void} props.onDelete - called when Delete is chosen
+ * @param {(taskId: string, author: string, text: string) => void} props.onAddComment - called when a comment is added
  * @param {() => void} props.onClose - called when the panel is closed
  * @returns {JSX.Element} the details panel
  */
-function TaskPanel({ task, hasChildren, calendar, readOnly, onFieldChange, onTypeChange, onDuplicate, onDelete, onClose }) {
+function TaskPanel({
+  task,
+  hasChildren,
+  calendar,
+  readOnly,
+  onFieldChange,
+  onTypeChange,
+  onDuplicate,
+  onDelete,
+  onAddComment,
+  onClose,
+}) {
   return (
     <aside className="task-panel" aria-label="Task details">
       <div className="task-panel__header">
@@ -54,6 +67,7 @@ function TaskPanel({ task, hasChildren, calendar, readOnly, onFieldChange, onTyp
           onTypeChange={onTypeChange}
           onDuplicate={onDuplicate}
           onDelete={onDelete}
+          onAddComment={onAddComment}
         />
       )}
     </aside>
@@ -66,7 +80,7 @@ function TaskPanel({ task, hasChildren, calendar, readOnly, onFieldChange, onTyp
  * @param {object} props - the same props as TaskPanel, minus the close handler, with `task` always set
  * @returns {JSX.Element} the fields
  */
-function PanelFields({ task, hasChildren, calendar, readOnly, onFieldChange, onTypeChange, onDuplicate, onDelete }) {
+function PanelFields({ task, hasChildren, calendar, readOnly, onFieldChange, onTypeChange, onDuplicate, onDelete, onAddComment }) {
   const isGroup = task.type === 'group'
   const isMilestone = task.type === 'milestone'
   const end = computeEnd(task, calendar)
@@ -215,6 +229,8 @@ function PanelFields({ task, hasChildren, calendar, readOnly, onFieldChange, onT
         />
       </label>
 
+      <CommentsSection task={task} readOnly={readOnly} onAddComment={onAddComment} />
+
       {task.baseline && (
         <p className="task-panel__info">
           Baseline: {formatUKDate(task.baseline.start)} to {formatUKDate(baselineEnd(task, calendar))}
@@ -238,6 +254,78 @@ function PanelFields({ task, hasChildren, calendar, readOnly, onFieldChange, onT
         </button>
       </div>
     </div>
+  )
+}
+
+/**
+ * A task's comments: an append-only log (no edit or delete) of who
+ * said what and when, separate from the single free-text Notes
+ * field. Each comment is typed with the author's name alongside it,
+ * since there are no accounts to know who is writing.
+ * @param {object} props
+ * @param {import('../lib/scheduler.js').Task} props.task - the task whose comments to show
+ * @param {boolean} props.readOnly - when true the add-comment form is hidden
+ * @param {(taskId: string, author: string, text: string) => void} props.onAddComment - called when a comment is submitted
+ * @returns {JSX.Element} the comments section
+ */
+function CommentsSection({ task, readOnly, onAddComment }) {
+  const [author, setAuthor] = useState('')
+  const [text, setText] = useState('')
+  const comments = task.comments ?? []
+  const sorted = [...comments].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  const canAdd = author.trim() !== '' && text.trim() !== ''
+
+  /** Adds the comment and clears the text field, keeping the typed name for the next one. */
+  function handleAdd() {
+    if (!canAdd) return
+    onAddComment(task.id, author, text)
+    setText('')
+  }
+
+  return (
+    <fieldset className="task-panel__field task-panel__comments">
+      <legend>Comments</legend>
+
+      {sorted.length === 0 ? (
+        <p className="task-panel__empty">No comments yet.</p>
+      ) : (
+        <ul className="task-panel__comment-list">
+          {sorted.map((comment) => (
+            <li key={comment.id}>
+              <div className="task-panel__comment-meta">
+                <strong>{comment.author}</strong>
+                <span>{new Date(comment.createdAt).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}</span>
+              </div>
+              <p>{comment.text}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {!readOnly && (
+        <div className="task-panel__comment-form">
+          <input
+            type="text"
+            placeholder="Your name"
+            aria-label="Your name"
+            value={author}
+            maxLength={60}
+            onChange={(event) => setAuthor(event.target.value)}
+          />
+          <textarea
+            rows={2}
+            placeholder="Add a comment"
+            aria-label="Comment text"
+            value={text}
+            maxLength={1000}
+            onChange={(event) => setText(event.target.value)}
+          />
+          <button type="button" className="btn" disabled={!canAdd} onClick={handleAdd}>
+            Add comment
+          </button>
+        </div>
+      )}
+    </fieldset>
   )
 }
 

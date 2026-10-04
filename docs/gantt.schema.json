@@ -77,7 +77,22 @@
             "start": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
             "durationDays": { "type": "number", "minimum": 0 }
           }
+        },
+        "comments": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/comment" }
         }
+      }
+    },
+    "comment": {
+      "type": "object",
+      "required": ["id", "author", "text", "createdAt"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "author": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "text": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" }
       }
     },
     "dependency": {

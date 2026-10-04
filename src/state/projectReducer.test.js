@@ -54,6 +54,36 @@ describe('ADD_TASK', () => {
   })
 })
 
+describe('ADD_COMMENT', () => {
+  it('appends a comment with a trimmed author, text and a timestamp', () => {
+    const state = twoTaskState()
+    const next = projectReducer(state, { type: 'ADD_COMMENT', taskId: 'a', author: '  Sam  ', text: '  Looks good  ' })
+    const task = next.project.tasks.find((t) => t.id === 'a')
+    expect(task.comments).toHaveLength(1)
+    expect(task.comments[0]).toMatchObject({ author: 'Sam', text: 'Looks good' })
+    expect(typeof task.comments[0].createdAt).toBe('string')
+    expect(typeof task.comments[0].id).toBe('string')
+  })
+
+  it('keeps earlier comments and only touches the named task', () => {
+    let state = twoTaskState()
+    state = projectReducer(state, { type: 'ADD_COMMENT', taskId: 'a', author: 'Sam', text: 'First' })
+    state = projectReducer(state, { type: 'ADD_COMMENT', taskId: 'a', author: 'Priya', text: 'Second' })
+    const taskA = state.project.tasks.find((t) => t.id === 'a')
+    const taskB = state.project.tasks.find((t) => t.id === 'b')
+    expect(taskA.comments.map((c) => c.text)).toEqual(['First', 'Second'])
+    expect(taskB.comments ?? []).toHaveLength(0)
+  })
+
+  it('is one undo step', () => {
+    const state = twoTaskState()
+    const next = projectReducer(state, { type: 'ADD_COMMENT', taskId: 'a', author: 'Sam', text: 'A note' })
+    expect(next.history.past).toHaveLength(1)
+    const undone = projectReducer(next, { type: 'UNDO' })
+    expect(undone.project.tasks.find((t) => t.id === 'a').comments ?? []).toHaveLength(0)
+  })
+})
+
 describe('DELETE_TASK', () => {
   it('removes a group and its children together', () => {
     const project = createBlankProject('Test')

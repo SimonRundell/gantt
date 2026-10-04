@@ -103,6 +103,7 @@ function makeNewTask(project, afterTask, type) {
     collapsed: false,
     order: 0,
     baseline: null,
+    comments: [],
   }
 }
 
@@ -205,6 +206,20 @@ export function projectReducer(state, action) {
     case 'RENAME_TASK': {
       const history = pushHistory(state)
       const tasks = state.project.tasks.map((t) => (t.id === action.taskId ? { ...t, name: action.name } : t))
+      return { ...state, history, project: { ...state.project, tasks } }
+    }
+
+    case 'ADD_COMMENT': {
+      const history = pushHistory(state)
+      const comment = {
+        id: generateId('cm'),
+        author: action.author.trim().slice(0, 60),
+        text: action.text.trim().slice(0, 1000),
+        createdAt: new Date().toISOString(),
+      }
+      const tasks = state.project.tasks.map((t) =>
+        t.id === action.taskId ? { ...t, comments: [...(t.comments ?? []), comment] } : t,
+      )
       return { ...state, history, project: { ...state.project, tasks } }
     }
 
@@ -360,6 +375,7 @@ export function projectReducer(state, action) {
             // Sit straight after the original; renumberOrder tidies this up.
             order: isRoot ? t.order + 0.5 : t.order,
             baseline: null,
+            comments: [],
           }
         })
 

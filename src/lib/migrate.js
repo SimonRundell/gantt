@@ -7,7 +7,7 @@
  */
 
 /** @type {number} the schema version this build of the app writes and expects */
-export const CURRENT_SCHEMA_VERSION = 1
+export const CURRENT_SCHEMA_VERSION = 2
 
 /**
  * Migration steps, keyed by the version they upgrade *from*. Add a new
@@ -15,7 +15,16 @@ export const CURRENT_SCHEMA_VERSION = 1
  * shape changes in a way old files need help with.
  * @type {Record<number, (doc: object) => object>}
  */
-const migrations = {}
+const migrations = {
+  // v1 -> v2: every task gets a comments list (append-only, added in
+  // the task details panel). A file from before this existed simply
+  // has none yet.
+  1: (doc) => ({
+    ...doc,
+    schemaVersion: 2,
+    tasks: doc.tasks.map((task) => (task.comments ? task : { ...task, comments: [] })),
+  }),
+}
 
 /**
  * Brings a project document up to the current schema version.

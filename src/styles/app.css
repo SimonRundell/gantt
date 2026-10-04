@@ -1556,6 +1556,73 @@ fieldset.dialog__field label {
   gap: 0.5rem;
 }
 
+.task-panel__comments {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.task-panel__comment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.task-panel__comment-list li {
+  padding: 0.5rem 0.6rem;
+  background: var(--gc-bg);
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius);
+}
+
+.task-panel__comment-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--gc-text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.task-panel__comment-meta strong {
+  color: var(--gc-text);
+}
+
+.task-panel__comment-list p {
+  margin: 0;
+  font-weight: normal;
+  font-size: 0.85rem;
+  color: var(--gc-text);
+  white-space: pre-wrap;
+}
+
+.task-panel__comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.task-panel__comment-form input,
+.task-panel__comment-form textarea {
+  font-weight: normal;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--gc-text);
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius);
+  resize: vertical;
+}
+
+.task-panel__comment-form button {
+  align-self: flex-end;
+}
+
 /* ---------------------------------------------------------------- */
 /* Bar patterns, baseline and resources                               */
 /* ---------------------------------------------------------------- */

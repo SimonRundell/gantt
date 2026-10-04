@@ -283,6 +283,20 @@ function validateProjectShape(array $doc, array $config): array
         if (isset($task['start']) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $task['start'])) {
             $problems[] = "Task '" . $task['name'] . "' has a start date that is not in YYYY-MM-DD format.";
         }
+
+        if (isset($task['comments']) && is_array($task['comments'])) {
+            foreach ($task['comments'] as $comment) {
+                if (!is_array($comment)) {
+                    continue;
+                }
+                if (!isset($comment['author']) || !is_string($comment['author']) || mb_strlen($comment['author']) > 60) {
+                    $problems[] = "Task '" . $task['name'] . "' has a comment with an invalid author name (60 characters maximum).";
+                }
+                if (!isset($comment['text']) || !is_string($comment['text']) || $comment['text'] === '' || mb_strlen($comment['text']) > 1000) {
+                    $problems[] = "Task '" . $task['name'] . "' has a comment with invalid text (1000 characters maximum).";
+                }
+            }
+        }
     }
 
     if (isset($doc['dependencies']) && is_array($doc['dependencies'])) {

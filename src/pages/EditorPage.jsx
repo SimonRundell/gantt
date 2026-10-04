@@ -510,6 +510,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
             onTypeChange={(taskId, taskType) => dispatch({ type: 'SET_TASK_TYPE', taskId, taskType })}
             onDuplicate={(taskId) => dispatch({ type: 'DUPLICATE_TASK', taskId })}
             onDelete={(taskId) => dispatch({ type: 'DELETE_TASK', taskId })}
+            onAddComment={(taskId, author, text) => dispatch({ type: 'ADD_COMMENT', taskId, author, text })}
             onClose={() => setDetailsOpen(false)}
           />
         )}
