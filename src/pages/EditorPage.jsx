@@ -21,7 +21,7 @@ import Toolbar from '../components/Toolbar.jsx'
 import UploadChoiceDialog from '../components/UploadChoiceDialog.jsx'
 import { parseTasksCsv } from '../lib/csvTasks.js'
 import { todayISO } from '../lib/dates.js'
-import { downloadProjectJson, downloadTasksCsv } from '../lib/downloadFile.js'
+import { downloadProjectJson, downloadTasksCsv, downloadTasksXlsx } from '../lib/downloadFile.js'
 import { migrate } from '../lib/migrate.js'
 import { recordRecentProject } from '../lib/recentProjects.js'
 import { computeEnd, criticalPath } from '../lib/scheduler.js'
@@ -300,16 +300,24 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
    * Exports the whole chart (not just the visible area) as a PNG or a
    * PDF, rasterising the off-screen, unscrolled FullChartView rather
    * than anything currently on screen.
-   * @param {{format: 'png'|'pdf', pageSize: 'a4'|'a3', orientation: 'portrait'|'landscape', fit: 'width'|'tile'}} options - the chosen export options
+   * @param {{format: 'png'|'pdf'|'csv'|'xlsx', pageSize: 'a4'|'a3', orientation: 'portrait'|'landscape', fit: 'width'|'tile'}} options - the chosen export options
    * @returns {Promise<void>} resolves once the download has started
    */
   async function handleExport(options) {
-    const node = exportNodeRef.current
-    if (!node) return
     if (options.format === 'csv') {
       downloadTasksCsv(project)
       return
     }
+    if (options.format === 'xlsx') {
+      // Loaded on demand: exceljs is only needed if a student actually
+      // exports a workbook, and it is too large to add to the main
+      // bundle just in case.
+      const { tasksToXlsxBuffer } = await import('../lib/xlsxTasks.js')
+      downloadTasksXlsx(project, await tasksToXlsxBuffer(project))
+      return
+    }
+    const node = exportNodeRef.current
+    if (!node) return
     // Loaded on demand rather than imported at the top of the file:
     // jsPDF and html-to-image are only needed if a student actually
     // exports an image or PDF, and pulling them into the main bundle

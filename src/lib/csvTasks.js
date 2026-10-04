@@ -72,10 +72,12 @@ function normaliseHeading(heading) {
 /**
  * Lists every task in outline order (children straight after their
  * parent, whether or not the group is collapsed), with its depth.
+ * Shared with `xlsxTasks.js` and `mspdi.js`, which write the same
+ * outline order to other file formats.
  * @param {import('./scheduler.js').Task[]} tasks - every task in the project
  * @returns {{task: import('./scheduler.js').Task, depth: number}[]} the tasks in outline order
  */
-function outlineOrder(tasks) {
+export function outlineOrder(tasks) {
   const byId = new Map(tasks.map((t) => [t.id, t]))
   const children = buildChildrenMap(tasks)
   const result = []
@@ -96,15 +98,15 @@ function outlineOrder(tasks) {
 }
 
 /**
- * Writes a project's tasks as CSV text.
- * @param {{tasks: import('./scheduler.js').Task[], dependencies: import('./scheduler.js').Dependency[]}} project - the project to export
- * @returns {string} CSV text, one row per task in outline order
+ * Builds a function that renders a task's predecessors as row-number
+ * references such as `3`, `3FS+2`, for a given outline order. Shared
+ * with `xlsxTasks.js` and `mspdi.js`.
+ * @param {{dependencies: import('./scheduler.js').Dependency[]}} project - the project whose dependencies to render
+ * @param {Map<string, number>} rowById - each task id's row number in the outline being written
+ * @returns {(taskId: string) => string} a function from task id to its predecessors text
  */
-export function tasksToCsv(project) {
-  const outline = outlineOrder(project.tasks)
-  const rowById = new Map(outline.map(({ task }, index) => [task.id, index + 1]))
-
-  const predecessorsFor = (taskId) =>
+export function predecessorsRenderer(project, rowById) {
+  return (taskId) =>
     project.dependencies
       .filter((d) => d.to === taskId && rowById.has(d.from))
       .map((d) => {
@@ -112,6 +114,17 @@ export function tasksToCsv(project) {
         return `${rowById.get(d.from)}${d.type}${lag === 0 ? '' : lag > 0 ? `+${lag}` : lag}`
       })
       .join('; ')
+}
+
+/**
+ * Writes a project's tasks as CSV text.
+ * @param {{tasks: import('./scheduler.js').Task[], dependencies: import('./scheduler.js').Dependency[]}} project - the project to export
+ * @returns {string} CSV text, one row per task in outline order
+ */
+export function tasksToCsv(project) {
+  const outline = outlineOrder(project.tasks)
+  const rowById = new Map(outline.map(({ task }, index) => [task.id, index + 1]))
+  const predecessorsFor = predecessorsRenderer(project, rowById)
 
   const rows = outline.map(({ task, depth }, index) => [
     String(index + 1),

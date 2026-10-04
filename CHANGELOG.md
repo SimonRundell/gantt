@@ -162,3 +162,9 @@
 
 - Fixed "tile" PDF export producing dozens of pages for a long or zoomed-in chart (a ~130 task chart at day zoom needed 77 A4 pages before this fix). The tiling scale now backs off automatically until the chart fits within 20 pages, rather than always tiling at actual size.
 - New `src/lib/pdfLayout.js`: the page-layout maths (page size/margins, tiling grid, the scale back-off) pulled out of `exportChart.js` as a dependency-free module, so the export dialog can show a page-count estimate later without pulling jsPDF or html-to-image into the main bundle.
+
+## Excel (.xlsx) export
+
+- **Export** has a new **Excel workbook (.xlsx)** option alongside CSV: the same task data (name, type, dates, duration, percent, assignee, colour, notes, predecessors), but as a real spreadsheet - bold frozen header row, sensible column widths, and the task hierarchy shown with Excel's own cell indent rather than a Level column.
+- New `src/lib/xlsxTasks.js`, built on `exceljs`. Loaded on demand like jsPDF and html-to-image, so it only reaches a student's browser if they actually pick this export format: the library is large (about 930 KB, 257 KB gzipped) but adds nothing to the main bundle.
+- `outlineOrder` and the predecessor-rendering logic moved out of `csvTasks.js` into shared exports, so the CSV and Excel writers (and the planned Microsoft Project export) agree on row order and predecessor references instead of each reimplementing it.
