@@ -1807,6 +1807,13 @@ fieldset.dialog__field label {
   flex: 1;
 }
 
+.filter-dialog__date-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.6rem 0.6rem;
+}
+
 .csv-dialog__hint {
   margin: 0.5rem 0 0;
   color: var(--gc-text-muted);

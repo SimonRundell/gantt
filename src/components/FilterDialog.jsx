@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import Dialog from './Dialog.jsx'
 
 /**
@@ -32,6 +33,8 @@ function FilterDialog({
   onClose,
 }) {
   const hasFilter = assignee !== '' || fromISO !== '' || toISO !== ''
+  const fromId = useId()
+  const toId = useId()
 
   return (
     <Dialog open onClose={onClose} label="Filter tasks">
@@ -55,14 +58,12 @@ function FilterDialog({
 
       <fieldset className="dialog__field">
         <legend>Date range</legend>
-        <label className="filter-dialog__row">
-          From
-          <input type="date" value={fromISO} onChange={(event) => onFromChange(event.target.value)} />
-        </label>
-        <label className="filter-dialog__row">
-          To
-          <input type="date" value={toISO} onChange={(event) => onToChange(event.target.value)} />
-        </label>
+        <div className="filter-dialog__date-grid">
+          <label htmlFor={fromId}>From</label>
+          <input id={fromId} type="date" value={fromISO} onChange={(event) => onFromChange(event.target.value)} />
+          <label htmlFor={toId}>To</label>
+          <input id={toId} type="date" value={toISO} onChange={(event) => onToChange(event.target.value)} />
+        </div>
       </fieldset>
 
       <p className="dialog__hint">
