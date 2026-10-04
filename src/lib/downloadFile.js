@@ -1,4 +1,5 @@
 import { tasksToCsv } from './csvTasks.js'
+import { tasksToMspdiXml } from './mspdi.js'
 
 /** @type {string} marks a file as UTF-8, so Excel reads accented characters correctly */
 const BYTE_ORDER_MARK = String.fromCharCode(0xfeff)
@@ -46,6 +47,17 @@ export function downloadTextFile(filename, text, mimeType) {
 export function downloadTasksCsv(project) {
   const dateStamp = new Date().toISOString().slice(0, 10).replace(/-/g, '')
   downloadTextFile(`${slugify(project.title)}-tasks-${dateStamp}.csv`, `${BYTE_ORDER_MARK}${tasksToCsv(project)}`, 'text/csv')
+}
+
+/**
+ * Downloads a project's tasks as a Microsoft Project XML file named
+ * `{slug-of-title}-tasks-{yyyymmdd}.xml`.
+ * @param {object} project - the project whose tasks to export
+ * @returns {void}
+ */
+export function downloadTasksMspdi(project) {
+  const dateStamp = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+  downloadTextFile(`${slugify(project.title)}-tasks-${dateStamp}.xml`, tasksToMspdiXml(project), 'application/xml')
 }
 
 /**

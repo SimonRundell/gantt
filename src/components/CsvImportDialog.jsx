@@ -1,24 +1,25 @@
 import Dialog from './Dialog.jsx'
 
 /**
- * Shown after a CSV file is chosen in the editor. If the file could
- * not be read it explains why; otherwise it says what was found, lists
- * anything that was fixed or ignored, and asks whether to add the
- * tasks to this chart or replace what is there.
+ * Shown after a CSV or Microsoft Project XML file is chosen in the
+ * editor. If the file could not be read it explains why; otherwise it
+ * says what was found, lists anything that was fixed or ignored, and
+ * asks whether to add the tasks to this chart or replace what is there.
  * @param {object} props
  * @param {string} props.fileName - the name of the chosen file
+ * @param {string} props.formatLabel - the file format, for the dialog's heading (for example "CSV" or "Microsoft Project XML")
  * @param {import('../lib/csvTasks.js').CsvImportResult} props.result - what was read from the file
  * @param {() => void} props.onAppend - add the tasks after the existing ones
  * @param {() => void} props.onReplace - replace every task in the chart with the imported ones
  * @param {() => void} props.onCancel - close without importing
- * @returns {JSX.Element} the CSV import dialog
+ * @returns {JSX.Element} the import dialog
  */
-function CsvImportDialog({ fileName, result, onAppend, onReplace, onCancel }) {
+function CsvImportDialog({ fileName, formatLabel, result, onAppend, onReplace, onCancel }) {
   const failed = result.errors.length > 0
 
   return (
-    <Dialog open onClose={onCancel} label="Import tasks from CSV" className="csv-dialog">
-      <h2>Import from CSV</h2>
+    <Dialog open onClose={onCancel} label={`Import tasks from ${formatLabel}`} className="csv-dialog">
+      <h2>Import from {formatLabel}</h2>
       <p className="csv-dialog__file">{fileName}</p>
 
       {failed ? (

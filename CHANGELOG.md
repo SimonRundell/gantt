@@ -180,3 +180,10 @@
 - The task details panel has a new **Comments** section, separate from the existing free-text Notes field: an append-only log (no edit or delete) of author, text and when it was added, newest first. There are no accounts, so a name is typed alongside each comment rather than remembered.
 - Schema version 2: every task gets a `comments` array. `migrate.js` adds an empty one to a task from an older file; the server (`api/storage.php`) validates each comment's author (60 characters maximum) and text (1-1000 characters).
 - Adding a comment is one undo step, same as any other edit.
+
+## Microsoft Project XML import and export
+
+- **Export** has a new **Microsoft Project (.xml)** option: writes the chart as an MSPDI document (the XML format Microsoft Project itself reads and writes), with task hierarchy, dates, duration, percent complete, milestone/summary flags and predecessors with lag. Resources, assignments, baselines and custom calendars are not written - this app has no resource pool to export, only a free-text assignee per task.
+- **Upload** (both the home page and the editor) now also accepts a Microsoft Project `.xml` file, read the same forgiving way as CSV: what was found is shown before anything changes, with a choice to add the tasks to the end of the chart or replace every task, either undoable in one step.
+- New `src/lib/mspdi.js` (`tasksToMspdiXml`, `parseMspdiXml`, `mspdiToNewProject`), fully unit tested including an export-then-import round trip and a hand-written sample file (not produced by this app) to check it reads a file from elsewhere, not just its own output.
+- `CsvImportDialog` is now shared between CSV and Microsoft Project XML imports (a `formatLabel` prop controls its heading) rather than being duplicated.

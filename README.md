@@ -22,8 +22,10 @@ A free, login-free Gantt chart tool for planning coursework and group projects. 
 - Autosave, with a conflict dialog if two people save at once so nothing is lost silently.
 - Share links: an edit link and a view-only link. No accounts.
 - Download and upload as a `.json` file.
-- Export the task list as CSV for Excel or Google Sheets, and import tasks from a CSV (add to a chart, replace its tasks, or start a new chart from the home page).
+- Export the task list as CSV or as an Excel workbook, and import tasks from a CSV (add to a chart, replace its tasks, or start a new chart from the home page).
+- Export to and import from Microsoft Project XML, and filter the table and timeline by assignee or a date range (your own view only - never saved or exported).
 - Export to PNG and PDF (A4 or A3), and a print view. Exports include the whole chart.
+- A comments log per task (who said what and when), separate from the free-text notes field.
 - Starter templates (Employer Set Project, web build sprint plan).
 - Keyboard accessible, with a shortcuts cheat sheet (press `?`).
 

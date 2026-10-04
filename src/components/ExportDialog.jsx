@@ -6,7 +6,7 @@ import Dialog from './Dialog.jsx'
  * orientation and whether to fit the chart to one page wide or tile
  * it across a grid of pages at something closer to actual size.
  * @param {object} props
- * @param {(options: {format: 'png'|'pdf'|'csv'|'xlsx', pageSize: 'a4'|'a3', orientation: 'portrait'|'landscape', fit: 'width'|'tile'}) => Promise<void>} props.onExport - called with the chosen options (the page options only matter for PDF)
+ * @param {(options: {format: 'png'|'pdf'|'csv'|'xlsx'|'mspdi', pageSize: 'a4'|'a3', orientation: 'portrait'|'landscape', fit: 'width'|'tile'}) => Promise<void>} props.onExport - called with the chosen options (the page options only matter for PDF)
  * @param {() => void} props.onClose - called when the dialog should close
  * @returns {JSX.Element} the export dialog
  */
@@ -50,6 +50,10 @@ function ExportDialog({ onExport, onClose }) {
         <label>
           <input type="radio" name="format" checked={format === 'xlsx'} onChange={() => setFormat('xlsx')} /> Excel
           workbook (.xlsx)
+        </label>
+        <label>
+          <input type="radio" name="format" checked={format === 'mspdi'} onChange={() => setFormat('mspdi')} />{' '}
+          Microsoft Project (.xml)
         </label>
       </fieldset>
 

@@ -22,8 +22,9 @@ import Toolbar from '../components/Toolbar.jsx'
 import UploadChoiceDialog from '../components/UploadChoiceDialog.jsx'
 import { parseTasksCsv } from '../lib/csvTasks.js'
 import { todayISO } from '../lib/dates.js'
-import { downloadProjectJson, downloadTasksCsv, downloadTasksXlsx } from '../lib/downloadFile.js'
+import { downloadProjectJson, downloadTasksCsv, downloadTasksMspdi, downloadTasksXlsx } from '../lib/downloadFile.js'
 import { migrate } from '../lib/migrate.js'
+import { parseMspdiXml } from '../lib/mspdi.js'
 import { recordRecentProject } from '../lib/recentProjects.js'
 import { computeEnd, criticalPath } from '../lib/scheduler.js'
 import { createPerformanceSampleProject } from '../lib/sampleProject.js'
@@ -170,7 +171,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
   const [shareOpen, setShareOpen] = useState(justCreated)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [uploadChoice, setUploadChoice] = useState(null)
-  const [csvImport, setCsvImport] = useState(null)
+  const [taskImport, setTaskImport] = useState(null)
   const [exportOpen, setExportOpen] = useState(false)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -312,12 +313,16 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
    * Exports the whole chart (not just the visible area) as a PNG or a
    * PDF, rasterising the off-screen, unscrolled FullChartView rather
    * than anything currently on screen.
-   * @param {{format: 'png'|'pdf'|'csv'|'xlsx', pageSize: 'a4'|'a3', orientation: 'portrait'|'landscape', fit: 'width'|'tile'}} options - the chosen export options
+   * @param {{format: 'png'|'pdf'|'csv'|'xlsx'|'mspdi', pageSize: 'a4'|'a3', orientation: 'portrait'|'landscape', fit: 'width'|'tile'}} options - the chosen export options
    * @returns {Promise<void>} resolves once the download has started
    */
   async function handleExport(options) {
     if (options.format === 'csv') {
       downloadTasksCsv(project)
+      return
+    }
+    if (options.format === 'mspdi') {
+      downloadTasksMspdi(project)
       return
     }
     if (options.format === 'xlsx') {
@@ -355,10 +360,19 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
     if (!file) return
 
     const text = await file.text()
+    const earliest = project.tasks.reduce((min, t) => (t.start < min ? t.start : min), todayISO())
 
     if (/\.csv$/i.test(file.name) || file.type === 'text/csv') {
-      const earliest = project.tasks.reduce((min, t) => (t.start < min ? t.start : min), todayISO())
-      setCsvImport({ fileName: file.name, result: parseTasksCsv(text, { defaultStart: earliest }) })
+      setTaskImport({ fileName: file.name, formatLabel: 'CSV', result: parseTasksCsv(text, { defaultStart: earliest }) })
+      return
+    }
+
+    if (/\.xml$/i.test(file.name)) {
+      setTaskImport({
+        fileName: file.name,
+        formatLabel: 'Microsoft Project XML',
+        result: parseMspdiXml(text, { defaultStart: earliest }),
+      })
       return
     }
 
@@ -433,10 +447,10 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
       <input
         ref={fileInputRef}
         type="file"
-        accept="application/json,.json,text/csv,.csv"
+        accept="application/json,.json,text/csv,.csv,text/xml,application/xml,.xml"
         className="home-page__file-input"
         onChange={handleUploadFile}
-        aria-label="Upload a project file or a CSV task list"
+        aria-label="Upload a project file, a CSV task list, or a Microsoft Project XML file"
       />
 
       <div className="editor-page__body">
@@ -564,19 +578,20 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
         />
       )}
 
-      {csvImport && (
+      {taskImport && (
         <CsvImportDialog
-          fileName={csvImport.fileName}
-          result={csvImport.result}
+          fileName={taskImport.fileName}
+          formatLabel={taskImport.formatLabel}
+          result={taskImport.result}
           onAppend={() => {
-            dispatch({ type: 'IMPORT_TASKS', mode: 'append', tasks: csvImport.result.tasks, dependencies: csvImport.result.dependencies })
-            setCsvImport(null)
+            dispatch({ type: 'IMPORT_TASKS', mode: 'append', tasks: taskImport.result.tasks, dependencies: taskImport.result.dependencies })
+            setTaskImport(null)
           }}
           onReplace={() => {
-            dispatch({ type: 'IMPORT_TASKS', mode: 'replace', tasks: csvImport.result.tasks, dependencies: csvImport.result.dependencies })
-            setCsvImport(null)
+            dispatch({ type: 'IMPORT_TASKS', mode: 'replace', tasks: taskImport.result.tasks, dependencies: taskImport.result.dependencies })
+            setTaskImport(null)
           }}
-          onCancel={() => setCsvImport(null)}
+          onCancel={() => setTaskImport(null)}
         />
       )}
 

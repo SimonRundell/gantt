@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { csvToNewProject } from '../lib/csvTasks.js'
 import { formatUKDate, todayISO } from '../lib/dates.js'
 import { migrate } from '../lib/migrate.js'
+import { mspdiToNewProject } from '../lib/mspdi.js'
 import { loadRecentProjects, recordRecentProject } from '../lib/recentProjects.js'
 import { TEMPLATES } from '../lib/templates.js'
 import { sanitizeForImport, validateProject } from '../lib/validate.js'
@@ -62,6 +63,16 @@ function HomePage() {
       const { project, errors } = csvToNewProject(text, file.name, todayISO())
       if (!project) {
         setError(`That CSV file could not be used. ${errors.join(' ')}`)
+        return
+      }
+      await createAndOpen(project)
+      return
+    }
+
+    if (/\.xml$/i.test(file.name)) {
+      const { project, errors } = mspdiToNewProject(text, file.name, todayISO())
+      if (!project) {
+        setError(`That Microsoft Project file could not be used. ${errors.join(' ')}`)
         return
       }
       await createAndOpen(project)
@@ -136,16 +147,17 @@ function HomePage() {
         <section className="home-page__section">
           <h2>Open a saved file</h2>
           <p>
-            Have a chart saved as a <code>.json</code> file, or a task list in a <code>.csv</code> spreadsheet? Open it here.
+            Have a chart saved as a <code>.json</code> file, a task list in a <code>.csv</code> spreadsheet, or a
+            plan exported from Microsoft Project as <code>.xml</code>? Open it here.
           </p>
           <button type="button" className="btn" disabled={busy} onClick={() => fileInputRef.current?.click()}>
             <Icon name="upload" />
-            Upload a .json or .csv file
+            Upload a .json, .csv or .xml file
           </button>
           <input
             ref={fileInputRef}
             type="file"
-            accept="application/json,.json,text/csv,.csv"
+            accept="application/json,.json,text/csv,.csv,text/xml,application/xml,.xml"
             className="home-page__file-input"
             onChange={handleUpload}
             aria-label="Upload a project file"
