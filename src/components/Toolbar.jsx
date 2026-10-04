@@ -41,6 +41,8 @@ import Icon from './Icon.jsx'
  * @param {() => void} props.onOpenColumns - called when the Columns button is used
  * @param {() => void} props.onOpenResources - called when the Resources button is used
  * @param {() => void} props.onOpenBaseline - called when the Baseline button is used
+ * @param {() => void} props.onOpenFilter - called when the Filter button is used
+ * @param {boolean} props.filterActive - whether a filter is currently narrowing the table and timeline
  * @param {() => void} props.onOpenCalendar - called when the working calendar button is used
  * @param {() => void} props.onShowShortcuts - called when the keyboard shortcuts button is used
  * @returns {JSX.Element} the toolbar
@@ -78,6 +80,8 @@ function Toolbar({
   onOpenColumns,
   onOpenResources,
   onOpenBaseline,
+  onOpenFilter,
+  filterActive,
   onOpenCalendar,
   onShowShortcuts,
 }) {
@@ -216,6 +220,15 @@ function Toolbar({
           <button type="button" className="btn btn--ghost" onClick={onOpenBaseline}>
             <Icon name="flag" />
             Baseline
+          </button>
+          <button
+            type="button"
+            className={`btn btn--ghost${filterActive ? ' btn--active' : ''}`}
+            onClick={onOpenFilter}
+            aria-pressed={filterActive}
+          >
+            <Icon name="filter" />
+            Filter
           </button>
         </div>
 

@@ -168,3 +168,9 @@
 - **Export** has a new **Excel workbook (.xlsx)** option alongside CSV: the same task data (name, type, dates, duration, percent, assignee, colour, notes, predecessors), but as a real spreadsheet - bold frozen header row, sensible column widths, and the task hierarchy shown with Excel's own cell indent rather than a Level column.
 - New `src/lib/xlsxTasks.js`, built on `exceljs`. Loaded on demand like jsPDF and html-to-image, so it only reaches a student's browser if they actually pick this export format: the library is large (about 930 KB, 257 KB gzipped) but adds nothing to the main bundle.
 - `outlineOrder` and the predecessor-rendering logic moved out of `csvTasks.js` into shared exports, so the CSV and Excel writers (and the planned Microsoft Project export) agree on row order and predecessor references instead of each reimplementing it.
+
+## Date range and "my tasks" filters
+
+- New toolbar **Filter** button: narrow the task table and timeline to a single assignee (picked from the names already used in the chart) and/or a date range. A task's whole span is checked against the date range, not just its start, so a long task that merely overlaps the window still shows. A matching task's ancestors stay visible too, so the hierarchy still makes sense; a task hidden behind a collapsed group stays hidden regardless of the filter.
+- Viewing only: the filter lives in the browser, not the saved chart, and never affects what PNG, PDF, CSV, Excel or print output shows - two people on the same edit link can each have their own filter without affecting the other, or what either of them exports.
+- New `src/lib/taskFilter.js` (`distinctAssignees`, `filterRows`), fully unit tested, and a new `FilterDialog`.

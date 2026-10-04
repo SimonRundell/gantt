@@ -1692,6 +1692,12 @@ fieldset.dialog__field label {
   font-size: 0.85rem;
 }
 
+.dialog__hint {
+  margin: 0.5rem 0;
+  color: var(--gc-text-muted);
+  font-size: 0.8rem;
+}
+
 .csv-dialog__hint {
   margin: 0.5rem 0 0;
   color: var(--gc-text-muted);

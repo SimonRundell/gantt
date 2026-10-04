@@ -10,6 +10,7 @@ import BaselineDialog from '../components/BaselineDialog.jsx'
 import CalendarDialog from '../components/CalendarDialog.jsx'
 import ColumnsDialog from '../components/ColumnsDialog.jsx'
 import CsvImportDialog from '../components/CsvImportDialog.jsx'
+import FilterDialog from '../components/FilterDialog.jsx'
 import ResourcesDialog from '../components/ResourcesDialog.jsx'
 import TaskPanel from '../components/TaskPanel.jsx'
 import ShortcutsDialog from '../components/ShortcutsDialog.jsx'
@@ -26,6 +27,7 @@ import { migrate } from '../lib/migrate.js'
 import { recordRecentProject } from '../lib/recentProjects.js'
 import { computeEnd, criticalPath } from '../lib/scheduler.js'
 import { createPerformanceSampleProject } from '../lib/sampleProject.js'
+import { distinctAssignees, filterRows } from '../lib/taskFilter.js'
 import { flattenVisibleRows } from '../lib/taskTree.js'
 import { sanitizeForImport, validateProject } from '../lib/validate.js'
 import { useAutosave } from '../hooks/useAutosave.js'
@@ -175,11 +177,21 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
   const [columnsOpen, setColumnsOpen] = useState(false)
   const [resourcesOpen, setResourcesOpen] = useState(false)
   const [baselineOpen, setBaselineOpen] = useState(false)
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterAssignee, setFilterAssignee] = useState('')
+  const [filterFromISO, setFilterFromISO] = useState('')
+  const [filterToISO, setFilterToISO] = useState('')
   const timelineApiRef = useRef(null)
   const fileInputRef = useRef(null)
   const exportNodeRef = useRef(null)
 
   const rows = useMemo(() => flattenVisibleRows(project.tasks), [project.tasks])
+  const assigneeOptions = useMemo(() => distinctAssignees(project.tasks), [project.tasks])
+  const filterActive = filterAssignee !== '' || filterFromISO !== '' || filterToISO !== ''
+  const filteredRows = useMemo(
+    () => filterRows(rows, project.calendar, { assignee: filterAssignee, fromISO: filterFromISO, toISO: filterToISO }),
+    [rows, project.calendar, filterAssignee, filterFromISO, filterToISO],
+  )
   const tasksById = useMemo(() => new Map(project.tasks.map((t) => [t.id, t])), [project.tasks])
   const predecessorsByTask = useMemo(() => {
     const map = new Map()
@@ -413,6 +425,8 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
         onOpenColumns={() => setColumnsOpen(true)}
         onOpenResources={() => setResourcesOpen(true)}
         onOpenBaseline={() => setBaselineOpen(true)}
+        onOpenFilter={() => setFilterOpen(true)}
+        filterActive={filterActive}
         onOpenCalendar={() => setCalendarOpen(true)}
         onShowShortcuts={() => setShortcutsOpen(true)}
       />
@@ -428,7 +442,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
       <div className="editor-page__body">
         <div className="editor-page__table-pane" style={{ width: tableWidth }}>
           <TaskTable
-            rows={rows}
+            rows={filteredRows}
             columns={project.view.columns}
             selectedTaskId={selection.taskId}
             calendar={project.calendar}
@@ -461,7 +475,7 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
 
         <div className="editor-page__timeline-pane">
           <Timeline
-            rows={rows}
+            rows={filteredRows}
             dependencies={project.dependencies}
             calendar={project.calendar}
             scale={scale}
@@ -626,6 +640,26 @@ function EditorContent({ projectId, editToken, canEdit, justCreated }) {
           onClear={() => dispatch({ type: 'CLEAR_BASELINE' })}
           onToggleShow={() => dispatch({ type: 'TOGGLE_BASELINE' })}
           onClose={() => setBaselineOpen(false)}
+        />
+      )}
+
+      {filterOpen && (
+        <FilterDialog
+          assigneeOptions={assigneeOptions}
+          assignee={filterAssignee}
+          onAssigneeChange={setFilterAssignee}
+          fromISO={filterFromISO}
+          onFromChange={setFilterFromISO}
+          toISO={filterToISO}
+          onToChange={setFilterToISO}
+          shownCount={filteredRows.length}
+          totalCount={rows.length}
+          onClear={() => {
+            setFilterAssignee('')
+            setFilterFromISO('')
+            setFilterToISO('')
+          }}
+          onClose={() => setFilterOpen(false)}
         />
       )}
 
