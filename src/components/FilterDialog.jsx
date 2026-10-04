@@ -41,7 +41,7 @@ function FilterDialog({
         exported.
       </p>
 
-      <label className="dialog__field">
+      <label className="dialog__field filter-dialog__row">
         Assignee
         <select value={assignee} onChange={(event) => onAssigneeChange(event.target.value)}>
           <option value="">Everyone</option>
@@ -55,11 +55,11 @@ function FilterDialog({
 
       <fieldset className="dialog__field">
         <legend>Date range</legend>
-        <label>
+        <label className="filter-dialog__row">
           From
           <input type="date" value={fromISO} onChange={(event) => onFromChange(event.target.value)} />
         </label>
-        <label>
+        <label className="filter-dialog__row">
           To
           <input type="date" value={toISO} onChange={(event) => onToChange(event.target.value)} />
         </label>

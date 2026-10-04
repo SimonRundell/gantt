@@ -1796,6 +1796,17 @@ fieldset.dialog__field label {
   font-size: 0.8rem;
 }
 
+.filter-dialog__row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.filter-dialog__row select,
+.filter-dialog__row input {
+  flex: 1;
+}
+
 .csv-dialog__hint {
   margin: 0.5rem 0 0;
   color: var(--gc-text-muted);
