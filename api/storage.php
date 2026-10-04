@@ -28,6 +28,10 @@ function gcLoadConfig(): array
         'allowedOrigins' => [],
         'rateLimitPerMinute' => 60,
         'retentionDays' => 365,
+        // Empty by default: the storage overview page (admin_storage.php)
+        // always refuses when this is unset, rather than falling back to
+        // an unprotected view. Set a long random string to turn it on.
+        'adminKey' => '',
     ];
 
     if (!is_file($path)) {

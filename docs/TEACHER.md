@@ -47,3 +47,4 @@ The **Employer Set Project (12 weeks)** template gives a realistic skeleton: res
 
 - The server deletes charts nobody has touched for 365 days (see the cleanup script in the README). Tell students to download a `.json` copy of anything they need to keep for assessment.
 - Students can use the keyboard throughout. Press `?` in the editor for the shortcut list.
+- To see every chart saved on the server (title, last updated, task count, file size), set `adminKey` to a long random string in `api/.config.json`, then visit `/admin/storage?key=` followed by that string. It is read-only - there is nothing to delete or edit from this page, use the cleanup script for that. With no key set, the page always refuses, so there is nothing to turn on by accident.

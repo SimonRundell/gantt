@@ -1207,6 +1207,37 @@ fieldset.dialog__field label {
   width: 100%;
 }
 
+.admin-page {
+  padding: 2rem;
+  max-width: 60rem;
+  margin: 0 auto;
+}
+
+.admin-page__stats {
+  color: var(--gc-text-muted);
+}
+
+.admin-page__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.admin-page__table th,
+.admin-page__table td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--gc-border);
+}
+
+.admin-page__table th {
+  color: var(--gc-text-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .shortcuts-table {
   border-collapse: collapse;
   width: 100%;

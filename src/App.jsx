@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
+import AdminStoragePage from './pages/AdminStoragePage.jsx'
 import CMFloatAd from './components/CMFloatAd.jsx'
 import EditorPage from './pages/EditorPage.jsx'
 import HomePage from './pages/HomePage.jsx'
@@ -16,6 +17,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/p/:id" element={<EditorPage />} />
         <Route path="/print/:id" element={<PrintPage />} />
+        <Route path="/admin/storage" element={<AdminStoragePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <CMFloatAd />

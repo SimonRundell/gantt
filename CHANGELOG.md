@@ -187,3 +187,9 @@
 - **Upload** (both the home page and the editor) now also accepts a Microsoft Project `.xml` file, read the same forgiving way as CSV: what was found is shown before anything changes, with a choice to add the tasks to the end of the chart or replace every task, either undoable in one step.
 - New `src/lib/mspdi.js` (`tasksToMspdiXml`, `parseMspdiXml`, `mspdiToNewProject`), fully unit tested including an export-then-import round trip and a hand-written sample file (not produced by this app) to check it reads a file from elsewhere, not just its own output.
 - `CsvImportDialog` is now shared between CSV and Microsoft Project XML imports (a `formatLabel` prop controls its heading) rather than being duplicated.
+
+## Storage overview admin page
+
+- New read-only page at `/admin/storage?key=...`: every project saved on the server (title, last updated, task count, revision, file size) with a link to open each one, plus totals. For a teacher checking storage use, not for managing projects - there is nothing to delete or edit here, `api/cleanup.php` still handles scheduled removal.
+- Gated by a new `adminKey` setting in `api/.config.json` (empty by default). With no key configured, or the wrong one presented, the page always refuses - there is no reduced "public" view to accidentally leave exposed.
+- New `api/admin_storage.php` endpoint and `src/pages/AdminStoragePage.jsx`.

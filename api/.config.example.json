@@ -4,5 +4,6 @@
   "maxTasks": 1000,
   "allowedOrigins": [],
   "rateLimitPerMinute": 60,
-  "retentionDays": 365
+  "retentionDays": 365,
+  "adminKey": ""
 }
